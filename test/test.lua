@@ -51,4 +51,48 @@ function T:test_zmq_ctx_socket_pcall ()
     )
 end
 
+function T:test_zmq_bind ()
+    
+    local w, v = {}, {}
+    unittest.assert.equals 'Block not called' (true, w) (
+        zmq.ctx.pcall (function (ctx)
+            
+            unittest.assert.equals 'Cannot create a socket' (true, v) (
+                zmq.socket.pcall (ctx, zmq.socket.REP, function (socket)
+                    
+                    zmq.bind (socket, { transport = 'tcp', host = '*', port = 5555 })
+                    
+                    unittest.assert.istrue 'Cannot create a socket' (socket ~= zmq.C.NULL)
+                    return v
+                end)
+            )
+
+            return w
+        end)
+    )
+end
+
+
+function T:test_zmq_recv ()
+    
+    local w, v = {}, {}
+    unittest.assert.equals 'Block not called' (true, w) (
+        zmq.ctx.pcall (function (ctx)
+            
+            unittest.assert.equals 'Cannot create a socket' (true, v) (
+                zmq.socket.pcall (ctx, zmq.socket.REP, function (socket)
+
+                    zmq.bind (socket, { transport = 'tcp', host = '*', port = 5555 })
+                    local msg = zmq.recv (socket, 10)
+
+                    unittest.assert.istrue 'Cannot create a socket' (socket ~= zmq.C.NULL)
+                    return v
+                end)
+            )
+
+            return w
+        end)
+    )
+end
+
 print (unittest.api.suite (T))

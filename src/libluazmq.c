@@ -73,12 +73,50 @@ int l_zmq_close(lua_State *L)
     return 0;
 }
 
+int l_zmq_bind(lua_State *L)
+{
+    void *socket = lua_touserdata(L, 1);
+    const char *endpoint = luaL_checkstring(L, 2);
+
+    int error_flag = zmq_bind(socket, endpoint);
+
+    if (error_flag)
+        raise_zmq_errno(L);
+
+    return 0;
+}
+
+int l_zmq_recv(lua_State *L)
+{
+    void *socket = lua_touserdata(L, 1);
+    lua_Integer size = luaL_checkinteger(L, 2);
+    int flags = luaL_checkinteger(L, 3);
+
+    char *buffer = (char *)malloc(size);
+
+    int n = zmq_recv(socket, buffer, size, flags);
+
+    if (n == -1)
+    {
+        free(buffer);
+        raise_zmq_errno(L);
+    }
+
+    lua_pushlstring(L, buffer, n > size ? size : n);
+
+    free(buffer);
+
+    return 1;
+}
+
 const struct luaL_Reg libluazmq[] = {
     {"ctx_new", l_zmq_ctx_new},
     {"ctx_shutdown", l_zmq_ctx_shutdown},
     {"ctx_term", l_zmq_ctx_term},
     {"zmq_socket", l_zmq_socket},
     {"zmq_close", l_zmq_close},
+    {"zmq_bind", l_zmq_bind},
+    {"zmq_recv", l_zmq_recv},
     {NULL, NULL} /* sentinel */
 };
 
