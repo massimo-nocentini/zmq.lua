@@ -86,10 +86,7 @@ function T:test_zmq_recv ()
                     zmq.bind (server, { transport = 'tcp', host = '*', port = port })
                     zmq.connect (client, { transport = 'tcp', host = 'localhost', port = port })
                     
-                    local thread_s, pthread_s = pthread.create {} (function ()
-                        local msg = zmq.recv (server, 10)
-                        return msg
-                    end)
+                    local thread_s, pthread_s = pthread.create {} (function () return zmq.recv (server, 10) end)
                     
                     assert (zmq.send (client, 'Hello') == 5, 'Cannot send message')
                      
@@ -111,8 +108,8 @@ function T:test_zmq_recv_send ()
             zmq.socket.pcall (ctx, zmq.socket.REP, function (server)
                 zmq.socket.pcall (ctx, zmq.socket.REQ, function (client)
     
-                    zmq.bind (server, { transport = 'tcp', host = '*', port = port })
-                    zmq.connect (client, { transport = 'tcp', host = 'localhost', port = port })
+                    zmq.bind (server, { port = port })
+                    zmq.connect (client, { port = port })
     
                     local thread_s, pthread_s = pthread.create {} (function ()
                         local msg = zmq.recv (server, 10)
@@ -122,16 +119,59 @@ function T:test_zmq_recv_send ()
     
                     local thread_c, pthread_c = pthread.create {} (function ()
                         assert (zmq.send (client, 'hello') == 5)
-                        local msg = zmq.recv (client, 10)
-                        return msg
+                        return zmq.recv (client, 10)
                     end)
     
                     local flag_c, msg_from_server = pthread.join (thread_c, pthread_c)
                     local flag_s, msg_from_client = pthread.join (thread_s, pthread_s)
                     
                     unittest.assert.equals 'All ok' (true, true) (flag_s, flag_c)
-                    unittest.assert.equals 'Cannot receive message' ('hello', msg_from_client)
-                    unittest.assert.equals 'Cannot receive message' ('world', msg_from_server)
+                    unittest.assert.equals 'Cannot receive message' ('hello', 'world') (msg_from_client, msg_from_server)
+    
+                end)
+            end)
+        end)
+    )
+end
+
+
+function T:test_zmq_recv_send_loop ()
+    
+    local port, n = 5555, 10
+
+    unittest.assert.istrue 'Block not called' (
+        zmq.ctx.pcall (function (ctx)
+            zmq.socket.pcall (ctx, zmq.socket.REP, function (server)
+                zmq.socket.pcall (ctx, zmq.socket.REQ, function (client)
+    
+                    zmq.bind (server, { port = port })
+                    zmq.connect (client, { port = port })
+    
+                    local thread_s, pthread_s = pthread.create {} (function ()
+                        while true do
+                            local msg = zmq.recv (server, 10)
+                            if msg == 'quit' then
+                                break
+                            end
+                            assert (zmq.send (server, 'world') == 5)
+                        end
+                    end)
+    
+                    local thread_c, pthread_c = pthread.create {} (function ()
+                        local tbl = {}
+                        for i = 1, n do
+                            assert (zmq.send (client, 'hello') == 5)
+                            tbl[i] = zmq.recv (client, 10)
+                        end
+                        assert (zmq.send (client, 'quit') == 4)
+                        return tbl
+                    end)
+                    
+                    local flag_s, msg_from_client = pthread.join (thread_s, pthread_s)
+                    unittest.assert.equals 'Cannot receive message' (true, {'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world'}) (
+                        pthread.join (thread_c, pthread_c))
+
+                        
     
                 end)
             end)
