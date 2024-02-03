@@ -111,19 +111,19 @@ function T:test_zmq_recv_send ()
                     zmq.bind (server, { port = port })
                     zmq.connect (client, { port = port })
     
-                    local thread_s, pthread_s = pthread.create {} (function ()
+                    local thread_s = pthread.create {} (function ()
                         local msg = zmq.recv (server, 10)
                         assert (zmq.send (server, 'world') == 5)
                         return msg
                     end)
     
-                    local thread_c, pthread_c = pthread.create {} (function ()
+                    local thread_c = pthread.create {} (function ()
                         assert (zmq.send (client, 'hello') == 5)
                         return zmq.recv (client, 10)
                     end)
     
-                    local flag_c, msg_from_server = pthread.join (thread_c, pthread_c)
-                    local flag_s, msg_from_client = pthread.join (thread_s, pthread_s)
+                    local flag_c, msg_from_server = pthread.join (thread_c)
+                    local flag_s, msg_from_client = pthread.join (thread_s)
                     
                     unittest.assert.equals 'All ok' (true, true) (flag_s, flag_c)
                     unittest.assert.equals 'Cannot receive message' ('hello', 'world') (msg_from_client, msg_from_server)
