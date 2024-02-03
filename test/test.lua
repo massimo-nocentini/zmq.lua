@@ -147,7 +147,7 @@ function T:test_zmq_recv_send_loop ()
                     zmq.bind (server, { port = port })
                     zmq.connect (client, { port = port })
     
-                    local thread_s, pthread_s = pthread.create {} (function ()
+                    local thread_s = pthread.create {} (function ()
                         while true do
                             local msg = zmq.recv (server, 10)
                             if msg == 'quit' then
@@ -157,7 +157,7 @@ function T:test_zmq_recv_send_loop ()
                         end
                     end)
     
-                    local thread_c, pthread_c = pthread.create {} (function ()
+                    local thread_c = pthread.create {} (function ()
                         local tbl = {}
                         for i = 1, n do
                             assert (zmq.send (client, 'hello') == 5)
@@ -167,9 +167,9 @@ function T:test_zmq_recv_send_loop ()
                         return tbl
                     end)
                     
-                    local flag_s, msg_from_client = pthread.join (thread_s, pthread_s)
+                    unittest.assert.istrue 'Cannot receive message' (pthread.join (thread_s))
                     unittest.assert.equals 'Cannot receive message' (true, {'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world'}) (
-                        pthread.join (thread_c, pthread_c))
+                        pthread.join (thread_c))
 
                         
     
