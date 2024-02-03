@@ -86,6 +86,19 @@ int l_zmq_bind(lua_State *L)
     return 0;
 }
 
+int l_zmq_connect(lua_State *L)
+{
+    void *socket = lua_touserdata(L, 1);
+    const char *endpoint = luaL_checkstring(L, 2);
+
+    int error_flag = zmq_connect(socket, endpoint);
+
+    if (error_flag)
+        raise_zmq_errno(L);
+
+    return 0;
+}
+
 int l_zmq_recv(lua_State *L)
 {
     void *socket = lua_touserdata(L, 1);
@@ -109,6 +122,26 @@ int l_zmq_recv(lua_State *L)
     return 1;
 }
 
+
+int l_zmq_send(lua_State *L)
+{
+    void *socket = lua_touserdata(L, 1);
+    size_t size;
+    const char* str = luaL_checklstring(L, 2, &size);
+    int flags = luaL_checkinteger(L, 3);
+
+    int n = zmq_send(socket, str, size, flags);
+
+    if (n == -1)
+    {
+        raise_zmq_errno(L);
+    }
+
+    lua_pushinteger(L, n);
+
+    return 1;
+}
+
 const struct luaL_Reg libluazmq[] = {
     {"ctx_new", l_zmq_ctx_new},
     {"ctx_shutdown", l_zmq_ctx_shutdown},
@@ -116,6 +149,7 @@ const struct luaL_Reg libluazmq[] = {
     {"zmq_socket", l_zmq_socket},
     {"zmq_close", l_zmq_close},
     {"zmq_bind", l_zmq_bind},
+    {"zmq_connect", l_zmq_connect},
     {"zmq_recv", l_zmq_recv},
     {NULL, NULL} /* sentinel */
 };

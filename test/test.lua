@@ -1,6 +1,7 @@
 
 local unittest = require "unittest"
 local zmq = require "zmq"
+local pthread = require 'libc'.pthread
 
 local T = {}
 
@@ -75,22 +76,31 @@ end
 
 function T:test_zmq_recv ()
     
-    local w, v = {}, {}
-    unittest.assert.equals 'Block not called' (true, w) (
+    local port = 5555
+
+    unittest.assert.istrue 'Block not called' (true) (
         zmq.ctx.pcall (function (ctx)
             
-            unittest.assert.equals 'Cannot create a socket' (true, v) (
-                zmq.socket.pcall (ctx, zmq.socket.REP, function (socket)
 
-                    zmq.bind (socket, { transport = 'tcp', host = '*', port = 5555 })
-                    local msg = zmq.recv (socket, 10)
+            zmq.socket.pcall (ctx, zmq.socket.REP, function (server)
+                zmq.socket.pcall (ctx, zmq.socket.REQ, function (client)
 
-                    unittest.assert.istrue 'Cannot create a socket' (socket ~= zmq.C.NULL)
-                    return v
+                    zmq.bind (server, { transport = 'tcp', host = '*', port = port })
+                    zmq.connect (client, { transport = 'tcp', host = 'localhost', port = port })
+    
+                    local thread_s, pthread_s = pthread.create {} (function ()
+                        local msg = zmq.recv (server, 10)
+                        return msg
+                    end)
+
+                    local n = zmq.send (client, 'Hello')
+                
+                    local flag, msg = pthread.join (thread_s, pthread_s)
+                
+                    unittest.assert.equals 'Cannot receive message' ('Hello', msg)
+
                 end)
-            )
-
-            return w
+            end)
         end)
     )
 end

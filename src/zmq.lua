@@ -49,8 +49,24 @@ function zmq.bind (socket, endpoint_tbl)
     )
 end
 
+
+function zmq.connect (socket, endpoint_tbl)
+    return libluazmq.zmq_connect (socket, 
+        string.format ('%s://%s:%d', 
+            endpoint_tbl.transport or 'tcp',
+            endpoint_tbl.host or 'localhost',
+            endpoint_tbl.port
+        )
+    )
+end
+
 function zmq.recv (socket, len, flags) 
     return libluazmq.zmq_recv (socket, len, flags or 0)
+end
+
+
+function zmq.send (socket, str, flags) 
+    return libluazmq.zmq_send (socket, str, flags or 0)
 end
 
 return zmq
