@@ -151,6 +151,7 @@ const struct luaL_Reg libluazmq[] = {
     {"zmq_bind", l_zmq_bind},
     {"zmq_connect", l_zmq_connect},
     {"zmq_recv", l_zmq_recv},
+    {"zmq_send", l_zmq_send},
     {NULL, NULL} /* sentinel */
 };
 
