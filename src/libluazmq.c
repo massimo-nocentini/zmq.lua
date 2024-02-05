@@ -210,6 +210,247 @@ void push_socket_types_table(lua_State *L)
 
     lua_pushinteger(L, ZMQ_XREP);
     lua_setfield(L, -2, "XREP");
+
+    lua_pushinteger(L, ZMQ_AFFINITY);
+    lua_setfield(L, -2, "AFFINITY");
+
+    lua_pushinteger(L, ZMQ_ROUTING_ID);
+    lua_setfield(L, -2, "ROUTING_ID");
+
+    lua_pushinteger(L, ZMQ_SUBSCRIBE);
+    lua_setfield(L, -2, "SUBSCRIBE");
+
+    lua_pushinteger(L, ZMQ_UNSUBSCRIBE);
+    lua_setfield(L, -2, "UNSUBSCRIBE");
+
+    lua_pushinteger(L, ZMQ_RATE);
+    lua_setfield(L, -2, "RATE");
+
+    lua_pushinteger(L, ZMQ_RECOVERY_IVL);
+    lua_setfield(L, -2, "RECOVERY_IVL");
+
+    lua_pushinteger(L, ZMQ_SNDBUF);
+    lua_setfield(L, -2, "SNDBUF");
+
+    lua_pushinteger(L, ZMQ_RCVBUF);
+    lua_setfield(L, -2, "RCVBUF");
+
+    lua_pushinteger(L, ZMQ_RCVMORE);
+    lua_setfield(L, -2, "RCVMORE");
+
+    lua_pushinteger(L, ZMQ_FD);
+    lua_setfield(L, -2, "FD");
+
+    lua_pushinteger(L, ZMQ_EVENTS);
+    lua_setfield(L, -2, "EVENTS");
+
+    lua_pushinteger(L, ZMQ_TYPE);
+    lua_setfield(L, -2, "TYPE");
+
+    lua_pushinteger(L, ZMQ_LINGER);
+    lua_setfield(L, -2, "LINGER");
+
+    lua_pushinteger(L, ZMQ_RECONNECT_IVL);
+    lua_setfield(L, -2, "RECONNECT_IVL");
+
+    lua_pushinteger(L, ZMQ_BACKLOG);
+    lua_setfield(L, -2, "BACKLOG");
+
+    lua_pushinteger(L, ZMQ_RECONNECT_IVL_MAX);
+    lua_setfield(L, -2, "RECONNECT_IVL_MAX");
+
+    lua_pushinteger(L, ZMQ_MAXMSGSIZE);
+    lua_setfield(L, -2, "MAXMSGSIZE");
+
+    lua_pushinteger(L, ZMQ_SNDHWM);
+    lua_setfield(L, -2, "SNDHWM");
+
+    lua_pushinteger(L, ZMQ_RCVHWM);
+    lua_setfield(L, -2, "RCVHWM");
+
+    lua_pushinteger(L, ZMQ_MULTICAST_HOPS);
+    lua_setfield(L, -2, "MULTICAST_HOPS");
+
+    lua_pushinteger(L, ZMQ_RCVTIMEO);
+    lua_setfield(L, -2, "RCVTIMEO");
+
+    lua_pushinteger(L, ZMQ_SNDTIMEO);
+    lua_setfield(L, -2, "SNDTIMEO");
+
+    lua_pushinteger(L, ZMQ_LAST_ENDPOINT);
+    lua_setfield(L, -2, "LAST_ENDPOINT");
+
+    lua_pushinteger(L, ZMQ_ROUTER_MANDATORY);
+    lua_setfield(L, -2, "ROUTER_MANDATORY");
+
+    lua_pushinteger(L, ZMQ_TCP_KEEPALIVE);
+    lua_setfield(L, -2, "TCP_KEEPALIVE");
+
+    lua_pushinteger(L, ZMQ_TCP_KEEPALIVE_CNT);
+    lua_setfield(L, -2, "TCP_KEEPALIVE_CNT");
+
+    lua_pushinteger(L, ZMQ_TCP_KEEPALIVE_IDLE);
+    lua_setfield(L, -2, "TCP_KEEPALIVE_IDLE");
+
+    lua_pushinteger(L, ZMQ_TCP_KEEPALIVE_INTVL);
+    lua_setfield(L, -2, "TCP_KEEPALIVE_INTVL");
+
+    lua_pushinteger(L, ZMQ_IMMEDIATE);
+    lua_setfield(L, -2, "IMMEDIATE");
+
+    lua_pushinteger(L, ZMQ_XPUB_VERBOSE);
+    lua_setfield(L, -2, "XPUB_VERBOSE");
+
+    lua_pushinteger(L, ZMQ_ROUTER_RAW);
+    lua_setfield(L, -2, "ROUTER_RAW");
+
+    lua_pushinteger(L, ZMQ_IPV6);
+    lua_setfield(L, -2, "IPV6");
+
+    lua_pushinteger(L, ZMQ_MECHANISM);
+    lua_setfield(L, -2, "MECHANISM");
+
+    lua_pushinteger(L, ZMQ_PLAIN_SERVER);
+    lua_setfield(L, -2, "PLAIN_SERVER");
+
+    lua_pushinteger(L, ZMQ_PLAIN_USERNAME);
+    lua_setfield(L, -2, "PLAIN_USERNAME");
+
+    lua_pushinteger(L, ZMQ_PLAIN_PASSWORD);
+    lua_setfield(L, -2, "PLAIN_PASSWORD");
+
+    lua_pushinteger(L, ZMQ_CURVE_SERVER);
+    lua_setfield(L, -2, "CURVE_SERVER");
+
+    lua_pushinteger(L, ZMQ_CURVE_PUBLICKEY);
+    lua_setfield(L, -2, "CURVE_PUBLICKEY");
+
+    lua_pushinteger(L, ZMQ_CURVE_SECRETKEY);
+    lua_setfield(L, -2, "CURVE_SECRET");
+
+    lua_pushinteger(L, ZMQ_CURVE_SERVERKEY);
+    lua_setfield(L, -2, "CURVE_SERVERKEY");
+
+    lua_pushinteger(L, ZMQ_PROBE_ROUTER);
+    lua_setfield(L, -2, "PROBE_ROUTER");
+
+    lua_pushinteger(L, ZMQ_REQ_CORRELATE);
+    lua_setfield(L, -2, "REQ_CORRELATE");
+
+    lua_pushinteger(L, ZMQ_REQ_RELAXED);
+    lua_setfield(L, -2, "REQ_RELAXED");
+
+    lua_pushinteger(L, ZMQ_CONFLATE);
+    lua_setfield(L, -2, "CONFLATE");
+
+    lua_pushinteger(L, ZMQ_ZAP_DOMAIN);
+    lua_setfield(L, -2, "ZAP_DOMAIN");
+
+    lua_pushinteger(L, ZMQ_ROUTER_HANDOVER);
+    lua_setfield(L, -2, "ROUTER_HANDOVER");
+
+    lua_pushinteger(L, ZMQ_TOS);
+    lua_setfield(L, -2, "TOS");
+
+    lua_pushinteger(L, ZMQ_CONNECT_ROUTING_ID);
+    lua_setfield(L, -2, "CONNECT_ROUTING_ID");
+
+    lua_pushinteger(L, ZMQ_GSSAPI_SERVER);
+    lua_setfield(L, -2, "GSSAPI_SERVER");
+
+    lua_pushinteger(L, ZMQ_GSSAPI_PRINCIPAL);
+    lua_setfield(L, -2, "GSSAPI_PRINCIPAL");
+
+    lua_pushinteger(L, ZMQ_GSSAPI_SERVICE_PRINCIPAL);
+    lua_setfield(L, -2, "GSSAPI_SERVICE_PRINCIPAL");
+
+    lua_pushinteger(L, ZMQ_GSSAPI_PLAINTEXT);
+    lua_setfield(L, -2, "GSSAPI_PLAINTEXT");
+
+    lua_pushinteger(L, ZMQ_HANDSHAKE_IVL);
+    lua_setfield(L, -2, "HANDSHAKE_IVL");
+
+    lua_pushinteger(L, ZMQ_SOCKS_PROXY);
+    lua_setfield(L, -2, "SOCKS_PROXY");
+
+    lua_pushinteger(L, ZMQ_XPUB_NODROP);
+    lua_setfield(L, -2, "XPUB_NODROP");
+
+    lua_pushinteger(L, ZMQ_BLOCKY);
+    lua_setfield(L, -2, "BLOCKY");
+
+    lua_pushboolean(L, ZMQ_XPUB_MANUAL);
+    lua_setfield(L, -2, "XPUB_MANUAL");
+
+    lua_pushinteger(L, ZMQ_XPUB_WELCOME_MSG);
+    lua_setfield(L, -2, "XPUB_WELCOME_MSG");
+
+    lua_pushinteger(L, ZMQ_STREAM_NOTIFY);
+    lua_setfield(L, -2, "STREAM_NOTIFY");
+
+    lua_pushinteger(L, ZMQ_INVERT_MATCHING);
+    lua_setfield(L, -2, "INVERT_MATCHING");
+
+    lua_pushinteger(L, ZMQ_HEARTBEAT_IVL);
+    lua_setfield(L, -2, "HEARTBEAT_IVL");
+
+    lua_pushinteger(L, ZMQ_HEARTBEAT_TTL);
+    lua_setfield(L, -2, "HEARTBEAT_TTL");
+
+    lua_pushinteger(L, ZMQ_HEARTBEAT_TIMEOUT);
+    lua_setfield(L, -2, "HEARTBEAT_TIMEOUT");
+
+    lua_pushinteger(L, ZMQ_XPUB_VERBOSER);
+    lua_setfield(L, -2, "XPUB_VERBOSER");
+
+    lua_pushinteger(L, ZMQ_CONNECT_TIMEOUT);
+    lua_setfield(L, -2, "CONNECT_TIMEOUT");
+
+    lua_pushinteger(L, ZMQ_TCP_MAXRT);
+    lua_setfield(L, -2, "TCP_MAXRT");
+
+    lua_pushinteger(L, ZMQ_THREAD_SAFE);
+    lua_setfield(L, -2, "THREAD_SAFE");
+
+    lua_pushinteger(L, ZMQ_MULTICAST_MAXTPDU);
+    lua_setfield(L, -2, "MULTICAST_MAXTPDU");
+
+    lua_pushinteger(L, ZMQ_VMCI_BUFFER_SIZE);
+    lua_setfield(L, -2, "VMCI_BUFFER_SIZE");
+
+    lua_pushinteger(L, ZMQ_VMCI_BUFFER_MIN_SIZE);
+    lua_setfield(L, -2, "VMCI_BUFFER_MIN_SIZE");
+
+    lua_pushinteger(L, ZMQ_VMCI_BUFFER_MAX_SIZE);
+    lua_setfield(L, -2, "VMCI_BUFFER_MAX_SIZE");
+
+    lua_pushinteger(L, ZMQ_VMCI_CONNECT_TIMEOUT);
+    lua_setfield(L, -2, "VMCI_CONNECT_TIMEOUT");
+
+    lua_pushinteger(L, ZMQ_USE_FD);
+    lua_setfield(L, -2, "USE_FD");
+
+    lua_pushinteger(L, ZMQ_GSSAPI_PRINCIPAL_NAMETYPE);
+    lua_setfield(L, -2, "GSSAPI_PRINCIPAL_NAMETYPE");
+
+    lua_pushinteger(L, ZMQ_GSSAPI_SERVICE_PRINCIPAL_NAMETYPE);
+    lua_setfield(L, -2, "GSSAPI_SERVICE_PRINCIPAL_NAMETYPE");
+
+    lua_pushinteger(L, ZMQ_BINDTODEVICE);
+    lua_setfield(L, -2, "BINDTODEVICE");
+
+    lua_pushinteger(L, ZMQ_MORE);
+    lua_setfield(L, -2, "MORE");
+
+    lua_pushinteger(L, ZMQ_SHARED);
+    lua_setfield(L, -2, "SHARED");
+
+    lua_pushinteger(L, ZMQ_DONTWAIT);
+    lua_setfield(L, -2, "DONTWAIT");
+
+    lua_pushinteger(L, ZMQ_SNDMORE);
+    lua_setfield(L, -2, "SNDMORE");
+
 }
 
 int luaopen_libluazmq(lua_State *L) // the initialization function of the module.
