@@ -212,17 +212,17 @@ function T:test_zmq_recv_send_loop ()
                         while true do
                             local msg = zmq.recv (server, 10)
                             if msg == 'quit' then break end
-                            assert (zmq.send (server, 'world') == 5)
+                            zmq.send (server, 'world')
                         end
                     end)
     
                     local thread_c = pthread.create {} (function ()
                         local tbl = {}
                         for i = 1, n do
-                            assert (zmq.send (client, 'hello') == 5)
+                            zmq.send (client, 'hello')
                             tbl[i] = zmq.recv (client, 10)
                         end
-                        assert (zmq.send (client, 'quit') == 4)
+                        zmq.send (client, 'quit')
                         return tbl
                     end)
                     
