@@ -7,6 +7,7 @@ local zmq = {
         term = libluazmq.ctx_term,
         shutdown = libluazmq.ctx_shutdown,
     },
+    socket = {},
     close = libluazmq.zmq_close,
 }
 
@@ -48,7 +49,6 @@ function zmq.bind (socket, endpoint_tbl)
         )
     )
 end
-
 
 function zmq.connect (socket, endpoint_tbl)
     return libluazmq.zmq_connect (socket, 

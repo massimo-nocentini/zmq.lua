@@ -167,8 +167,6 @@ void push_C_table(lua_State *L)
 
 void push_socket_types_table(lua_State *L)
 {
-    lua_newtable(L);
-
     lua_pushinteger(L, ZMQ_PAIR);
     lua_setfield(L, -2, "PAIR");
 
@@ -210,8 +208,6 @@ void push_socket_types_table(lua_State *L)
 
     lua_pushinteger(L, ZMQ_XREP);
     lua_setfield(L, -2, "XREP");
-
-    lua_setfield(L, -2, "socket");
 }
 
 int luaopen_libluazmq(lua_State *L) // the initialization function of the module.
