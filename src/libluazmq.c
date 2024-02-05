@@ -122,12 +122,11 @@ int l_zmq_recv(lua_State *L)
     return 1;
 }
 
-
 int l_zmq_send(lua_State *L)
 {
     void *socket = lua_touserdata(L, 1);
     size_t size;
-    const char* str = luaL_checklstring(L, 2, &size);
+    const char *str = luaL_checklstring(L, 2, &size);
     int flags = luaL_checkinteger(L, 3);
 
     int n = zmq_send(socket, str, size, flags);
@@ -142,6 +141,18 @@ int l_zmq_send(lua_State *L)
     return 1;
 }
 
+int l_zmq_version(lua_State *L)
+{
+    int major, minor, patch;
+    zmq_version(&major, &minor, &patch);
+
+    lua_pushinteger(L, major);
+    lua_pushinteger(L, minor);
+    lua_pushinteger(L, patch);
+
+    return 3;
+}
+
 const struct luaL_Reg libluazmq[] = {
     {"ctx_new", l_zmq_ctx_new},
     {"ctx_shutdown", l_zmq_ctx_shutdown},
@@ -152,18 +163,9 @@ const struct luaL_Reg libluazmq[] = {
     {"zmq_connect", l_zmq_connect},
     {"zmq_recv", l_zmq_recv},
     {"zmq_send", l_zmq_send},
+    {"zmq_version", l_zmq_version},
     {NULL, NULL} /* sentinel */
 };
-
-void push_C_table(lua_State *L)
-{
-    lua_newtable(L);
-
-    lua_pushlightuserdata(L, NULL);
-    lua_setfield(L, -2, "NULL");
-
-    lua_setfield(L, -2, "C");
-}
 
 void push_socket_types_table(lua_State *L)
 {
@@ -214,7 +216,6 @@ int luaopen_libluazmq(lua_State *L) // the initialization function of the module
 {
     luaL_newlib(L, libluazmq);
 
-    push_C_table(L);
     push_socket_types_table(L);
 
     return 1;

@@ -1,13 +1,20 @@
 
 local unittest = require "unittest"
 local zmq = require "zmq"
-local pthread = require 'libc'.pthread
+local libc = require 'libc'
+local pthread = libc.pthread
 
 local T = {}
 
+
+function T:test_zmq_version ()
+    unittest.assert.equals '' (4, 3, 5) (zmq.version ())
+end
+
+
 function T:test_zmq_ctx_new ()
     local ctx = zmq.ctx.new ()
-    unittest.assert.istrue 'Failed in creating the context.' (ctx ~= zmq.C.NULL)
+    unittest.assert.istrue 'Failed in creating the context.' (ctx ~= libc.stddef.NULL)
     zmq.ctx.term (ctx)
 end
 
@@ -15,7 +22,7 @@ function T:test_zmq_ctx_call ()
     
     unittest.assert.equals 'Block not called' (true, true) (
         zmq.ctx.pcall (function (ctx) 
-            unittest.assert.istrue 'Failed in creating the context.' (ctx ~= zmq.C.NULL)
+            unittest.assert.istrue 'Failed in creating the context.' (ctx ~= libc.stddef.NULL)
             return true
         end)
     )
@@ -26,7 +33,7 @@ function T:test_zmq_ctx_socket ()
     unittest.assert.equals 'Block not called' (true, true) (
         zmq.ctx.pcall (function (ctx)
             local socket = zmq.socket (ctx, zmq.REP)
-            unittest.assert.istrue 'Cannot create a socket' (socket ~= zmq.C.NULL)
+            unittest.assert.istrue 'Cannot create a socket' (socket ~= libc.stddef.NULL)
             zmq.close (socket)
             return true
         end)
@@ -42,7 +49,7 @@ function T:test_zmq_ctx_socket_pcall ()
             
             unittest.assert.equals 'Cannot create a socket' (true, v) (
                 zmq.socket.pcall (ctx, zmq.REP, function (socket)
-                    unittest.assert.istrue 'Cannot create a socket' (socket ~= zmq.C.NULL)
+                    unittest.assert.istrue 'Cannot create a socket' (socket ~= libc.stddef.NULL)
                     return v
                 end)
             )
@@ -63,7 +70,7 @@ function T:test_zmq_bind ()
                     
                     zmq.bind (socket, { transport = 'tcp', host = '*', port = 5555 })
                     
-                    unittest.assert.istrue 'Cannot create a socket' (socket ~= zmq.C.NULL)
+                    unittest.assert.istrue 'Cannot create a socket' (socket ~= libc.stddef.NULL)
                     return v
                 end)
             )
@@ -147,7 +154,7 @@ function T:test_zmq_recv_send_loop ()
                     zmq.bind (server, { port = port })
                     zmq.connect (client, { port = port })
     
-                    local thread_s = pthread.create { create_detached = true } (function ()
+                    local thread_s = pthread.create {} (function ()
                         while true do
                             local msg = zmq.recv (server, 10)
                             if msg == 'quit' then break end
@@ -169,8 +176,9 @@ function T:test_zmq_recv_send_loop ()
                     unittest.assert.equals 'Cannot receive message' (true, {
                         'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world'
                     }) (pthread.join (thread_c))
-                    -- unittest.assert.istrue 'Cannot receive message' (pthread.join (thread_s))
+                    unittest.assert.istrue 'Cannot receive message' (pthread.join (thread_s))
     
+                    os.execute 'sleep 0.2s'
                 end)
             end)
         end)

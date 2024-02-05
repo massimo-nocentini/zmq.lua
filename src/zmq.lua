@@ -9,6 +9,7 @@ local zmq = {
     },
     socket = {},
     close = libluazmq.zmq_close,
+    version = libluazmq.zmq_version,
 }
 
 setmetatable (zmq, {
