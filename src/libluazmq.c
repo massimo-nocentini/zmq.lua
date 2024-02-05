@@ -188,6 +188,11 @@ int l_zmq_send(lua_State *L)
         raise_zmq_errno(L);
     }
 
+    if (n != size)
+    {
+        luaL_error(L, "zmq_send: sent %d bytes instead of %d.", n, size);
+    }
+
     lua_pushinteger(L, n);
 
     return 1;

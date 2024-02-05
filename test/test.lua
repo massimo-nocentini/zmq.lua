@@ -95,7 +95,7 @@ function T:test_zmq_recv ()
                     
                     local thread_s = pthread.create {} (function () return zmq.recv (server, 10) end)
                     
-                    assert (zmq.send (client, 'Hello') == 5, 'Cannot send message')
+                    zmq.send (client, 'Hello')
                      
                     unittest.assert.equals 'Cannot receive message' (true, 'Hello', false) (
                         pthread.join (thread_s))
@@ -120,8 +120,8 @@ function T:test_zmq_recv_big_msg_tbl ()
                     
                     local thread_s = pthread.create {} (function () return zmq.recv_more (server, 10, nil, false) end)
                     
-                    assert (zmq.send (client, 'Hello', zmq.SNDMORE) == 5, 'Cannot send message')
-                    assert (zmq.send (client, 'World') == 5, 'Cannot send message')
+                    zmq.send (client, 'Hello', zmq.SNDMORE)
+                    zmq.send (client, 'World')
                     
                     unittest.assert.equals 'Cannot receive message' (true, { 'Hello', 'World' }) (
                         pthread.join (thread_s))
@@ -147,9 +147,9 @@ function T:test_zmq_recv_big_msg_str ()
                     
                     local thread_s = pthread.create {} (function () return zmq.recv_more (server, 10) end)
                     
-                    assert (zmq.send (client, 'Hello', zmq.SNDMORE) == 5, 'Cannot send message')
-                    assert (zmq.send (client, ' ', zmq.SNDMORE) == 1, 'Cannot send message')
-                    assert (zmq.send (client, 'World') == 5, 'Cannot send message')
+                    zmq.send (client, 'Hello', zmq.SNDMORE)
+                    zmq.send (client, ' ', zmq.SNDMORE)
+                    zmq.send (client, 'World')
                     
                     unittest.assert.equals 'Cannot receive message' (true, 'Hello World' ) (
                         pthread.join (thread_s))
@@ -174,12 +174,12 @@ function T:test_zmq_recv_send ()
     
                     local thread_s = pthread.create {} (function ()
                         local msg = zmq.recv (server, 10)
-                        assert (zmq.send (server, 'world') == 5)
+                        zmq.send (server, 'world')
                         return msg
                     end)
     
                     local thread_c = pthread.create {} (function ()
-                        assert (zmq.send (client, 'hello') == 5)
+                        zmq.send (client, 'hello')
                         return zmq.recv (client, 10)
                     end)
     
