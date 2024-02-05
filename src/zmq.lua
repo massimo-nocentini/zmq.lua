@@ -70,10 +70,17 @@ function zmq.recv (socket, len, flags)
     return libluazmq.zmq_recv (socket, len, flags or 0)
 end
 
-function zmq.recv_more (...)
-    local tbl, recvmore = {}, true
-    while recvmore do tbl[#tbl + 1], recvmore = zmq.recv (...) end
-    return tbl
+function zmq.recv_more (socket, len, flags, return_str)
+
+    if return_str == nil then return_str = true end
+
+    if return_str then
+        return libluazmq.zmq_recv_more (socket, len, flags or 0)
+    else
+        local tbl, recvmore = {}, true
+        while recvmore do tbl[#tbl + 1], recvmore = zmq.recv (socket, len, flags or 0) end
+        return tbl
+    end
 end
 
 function zmq.send (socket, str, flags) 

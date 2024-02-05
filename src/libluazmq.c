@@ -132,6 +132,48 @@ int l_zmq_recv(lua_State *L)
     return 2;
 }
 
+int l_zmq_recv_more(lua_State *L)
+{
+    void *socket = lua_touserdata(L, 1);
+    lua_Integer size = luaL_checkinteger(L, 2);
+    int flags = luaL_checkinteger(L, 3);
+
+    char *buffer = (char *)malloc(size);
+
+    int n, v = 1;
+    size_t l = sizeof(v);
+
+    luaL_Buffer b;
+
+    luaL_buffinit(L, &b);
+
+    while (v)
+    {
+        n = zmq_recv(socket, buffer, size, flags);
+
+        if (n == -1)
+        {
+            free(buffer);
+            raise_zmq_errno(L);
+        }
+
+        luaL_addlstring(&b, buffer, n > size ? size : n);
+
+        n = zmq_getsockopt(socket, ZMQ_RCVMORE, &v, &l);
+
+        if (n == -1)
+        {
+            free(buffer);
+            raise_zmq_errno(L);
+        }
+    }
+
+    luaL_pushresult(&b);
+    free(buffer);
+
+    return 1;
+}
+
 int l_zmq_send(lua_State *L)
 {
     void *socket = lua_touserdata(L, 1);
@@ -195,6 +237,7 @@ const struct luaL_Reg libluazmq[] = {
     {"zmq_send", l_zmq_send},
     {"zmq_version", l_zmq_version},
     {"zmq_getsockopt_int", l_zmq_getsockopt_int},
+    {"zmq_recv_more", l_zmq_recv_more},
     {NULL, NULL} /* sentinel */
 };
 

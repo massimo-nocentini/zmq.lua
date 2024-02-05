@@ -106,7 +106,34 @@ function T:test_zmq_recv ()
     )
 end
 
-function T:test_zmq_recv_big_msg ()
+function T:test_zmq_recv_big_msg_tbl ()
+    
+    local port = 5555
+
+    unittest.assert.equals 'Block not called' (true, true, true) (
+        zmq.ctx.pcall (function (ctx)
+            return zmq.socket.pcall (ctx, zmq.REP, function (server)
+                return zmq.socket.pcall (ctx, zmq.REQ, function (client)
+
+                    zmq.bind (server, { port = port })
+                    zmq.connect (client, { port = port })
+                    
+                    local thread_s = pthread.create {} (function () return zmq.recv_more (server, 10, nil, false) end)
+                    
+                    assert (zmq.send (client, 'Hello', zmq.SNDMORE) == 5, 'Cannot send message')
+                    assert (zmq.send (client, 'World') == 5, 'Cannot send message')
+                    
+                    unittest.assert.equals 'Cannot receive message' (true, { 'Hello', 'World' }) (
+                        pthread.join (thread_s))
+
+                end)
+            end)
+        end)
+    )
+end
+
+
+function T:test_zmq_recv_big_msg_str ()
     
     local port = 5555
 
@@ -121,9 +148,10 @@ function T:test_zmq_recv_big_msg ()
                     local thread_s = pthread.create {} (function () return zmq.recv_more (server, 10) end)
                     
                     assert (zmq.send (client, 'Hello', zmq.SNDMORE) == 5, 'Cannot send message')
+                    assert (zmq.send (client, ' ', zmq.SNDMORE) == 1, 'Cannot send message')
                     assert (zmq.send (client, 'World') == 5, 'Cannot send message')
                     
-                    unittest.assert.equals 'Cannot receive message' (true, { 'Hello', 'World' }) (
+                    unittest.assert.equals 'Cannot receive message' (true, 'Hello World' ) (
                         pthread.join (thread_s))
 
                 end)
