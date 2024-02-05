@@ -8,6 +8,11 @@ local zmq = {
         shutdown = libluazmq.ctx_shutdown,
     },
     socket = {},
+    getsockopt = {
+        rcvmore = function (socket) 
+            return libluazmq.zmq_getsockopt_int (socket, libluazmq.ZMQ_RCVMORE) == 1 
+        end,
+    },
     close = libluazmq.zmq_close,
     version = libluazmq.zmq_version,
 }
@@ -65,6 +70,11 @@ function zmq.recv (socket, len, flags)
     return libluazmq.zmq_recv (socket, len, flags or 0)
 end
 
+function zmq.recv_more (...)
+    local tbl, recvmore = {}, true
+    while recvmore do tbl[#tbl + 1], recvmore = zmq.recv (...) end
+    return tbl
+end
 
 function zmq.send (socket, str, flags) 
     return libluazmq.zmq_send (socket, str, flags or 0)

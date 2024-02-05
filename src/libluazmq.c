@@ -119,7 +119,17 @@ int l_zmq_recv(lua_State *L)
 
     free(buffer);
 
-    return 1;
+    int v;
+    size_t l = sizeof(v);
+
+    n = zmq_getsockopt(socket, ZMQ_RCVMORE, &v, &l);
+
+    if (n == -1)
+        raise_zmq_errno(L);
+
+    lua_pushboolean(L, v);
+
+    return 2;
 }
 
 int l_zmq_send(lua_State *L)
@@ -153,6 +163,26 @@ int l_zmq_version(lua_State *L)
     return 3;
 }
 
+int l_zmq_getsockopt_int(lua_State *L)
+{
+    void *socket = lua_touserdata(L, 1);
+    lua_Integer opt = lua_tointeger(L, 2);
+
+    lua_Integer v;
+    size_t size;
+
+    int s = zmq_getsockopt(socket, opt, &v, &size);
+
+    if (s == -1)
+    {
+        raise_zmq_errno(L);
+    }
+
+    lua_pushinteger(L, v);
+
+    return 1;
+}
+
 const struct luaL_Reg libluazmq[] = {
     {"ctx_new", l_zmq_ctx_new},
     {"ctx_shutdown", l_zmq_ctx_shutdown},
@@ -164,6 +194,7 @@ const struct luaL_Reg libluazmq[] = {
     {"zmq_recv", l_zmq_recv},
     {"zmq_send", l_zmq_send},
     {"zmq_version", l_zmq_version},
+    {"zmq_getsockopt_int", l_zmq_getsockopt_int},
     {NULL, NULL} /* sentinel */
 };
 
@@ -450,7 +481,6 @@ void push_socket_types_table(lua_State *L)
 
     lua_pushinteger(L, ZMQ_SNDMORE);
     lua_setfield(L, -2, "SNDMORE");
-
 }
 
 int luaopen_libluazmq(lua_State *L) // the initialization function of the module.

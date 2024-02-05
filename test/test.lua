@@ -85,10 +85,10 @@ function T:test_zmq_recv ()
     
     local port = 5555
 
-    unittest.assert.istrue 'Block not called' (
+    unittest.assert.equals 'Block not called' (true, true, true) (
         zmq.ctx.pcall (function (ctx)
-            zmq.socket.pcall (ctx, zmq.REP, function (server)
-                zmq.socket.pcall (ctx, zmq.REQ, function (client)
+            return zmq.socket.pcall (ctx, zmq.REP, function (server)
+                return zmq.socket.pcall (ctx, zmq.REQ, function (client)
 
                     zmq.bind (server, { port = port })
                     zmq.connect (client, { port = port })
@@ -97,7 +97,7 @@ function T:test_zmq_recv ()
                     
                     assert (zmq.send (client, 'Hello') == 5, 'Cannot send message')
                      
-                    unittest.assert.equals 'Cannot receive message' (true, 'Hello') (
+                    unittest.assert.equals 'Cannot receive message' (true, 'Hello', false) (
                         pthread.join (thread_s))
 
                 end)
@@ -118,11 +118,12 @@ function T:test_zmq_recv_big_msg ()
                     zmq.bind (server, { port = port })
                     zmq.connect (client, { port = port })
                     
-                    local thread_s = pthread.create {} (function () return zmq.recv (server, 1) end)
+                    local thread_s = pthread.create {} (function () return zmq.recv_more (server, 10) end)
                     
-                    assert (zmq.send (client, 'Hello') == 5, 'Cannot send message')
-                     
-                    unittest.assert.equals 'Cannot receive message' (true, 'H') (
+                    assert (zmq.send (client, 'Hello', zmq.SNDMORE) == 5, 'Cannot send message')
+                    assert (zmq.send (client, 'World') == 5, 'Cannot send message')
+                    
+                    unittest.assert.equals 'Cannot receive message' (true, { 'Hello', 'World' }) (
                         pthread.join (thread_s))
 
                 end)
