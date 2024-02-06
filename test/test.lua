@@ -240,4 +240,47 @@ function T:test_zmq_recv_send_loop ()
 end
 
 
+function T:test_zmq_recv_pub_sub ()
+    
+    local port, n = 5555, 10
+
+    unittest.assert.equals 'Block not called' (true, true, true) (
+        zmq.ctx.pcall (function (ctx)
+            return zmq.socket.pcall (ctx, zmq.PUB, function (server)
+                return zmq.socket.pcall (ctx, zmq.SUB, function (client)
+    
+                    zmq.bind (server, { port = port })
+                    zmq.connect (client, { port = port })
+    
+                    zmq.setsockopt.subscribe (client, '10001 ')
+
+                    local thread_s = pthread.create { } (function ()
+                        while true do
+                            local zipcode, temperature, relhumidity;
+                            zipcode     = math.random (100000);
+                            temperature = math.random (215) - 80;
+                            relhumidity = math.random (50) + 10;
+                            local msg = string.format ("%05d %d %d", zipcode, temperature, relhumidity)
+                            zmq.send (server, msg)
+                        end
+                    end)
+    
+                    local thread_c = pthread.create {} (function ()
+                        local tbl = {}
+                        for i = 1, n do tbl[i] = zmq.recv (client, 20) end
+                        return tbl
+                    end)
+                    
+                    local flag, tbl = pthread.join (thread_c)
+                    unittest.assert.equals 'Cannot receive message' (true, 10) (flag, #tbl)
+                    -- unittest.assert.istrue 'Cannot receive message' (pthread.join (thread_s))
+    
+                    os.execute 'sleep 0.2s'
+                end)
+            end)
+        end)
+    )
+end
+
+
 print (unittest.api.suite (T))

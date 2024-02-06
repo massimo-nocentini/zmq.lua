@@ -230,6 +230,24 @@ int l_zmq_getsockopt_int(lua_State *L)
     return 1;
 }
 
+int l_zmq_setsockopt_string(lua_State *L)
+{
+    void *socket = lua_touserdata(L, 1);
+    lua_Integer opt = lua_tointeger(L, 2);
+
+    size_t size;
+    const char *v = luaL_checklstring(L, 3, &size);
+
+    int s = zmq_setsockopt(socket, opt, v, size);
+
+    if (s == -1)
+    {
+        raise_zmq_errno(L);
+    }
+
+    return 0;
+}
+
 const struct luaL_Reg libluazmq[] = {
     {"ctx_new", l_zmq_ctx_new},
     {"ctx_shutdown", l_zmq_ctx_shutdown},
@@ -242,6 +260,7 @@ const struct luaL_Reg libluazmq[] = {
     {"zmq_send", l_zmq_send},
     {"zmq_version", l_zmq_version},
     {"zmq_getsockopt_int", l_zmq_getsockopt_int},
+    {"zmq_setsockopt_string", l_zmq_setsockopt_string},
     {"zmq_recv_more", l_zmq_recv_more},
     {NULL, NULL} /* sentinel */
 };

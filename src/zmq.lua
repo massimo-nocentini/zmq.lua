@@ -10,7 +10,12 @@ local zmq = {
     socket = {},
     getsockopt = {
         rcvmore = function (socket) 
-            return libluazmq.zmq_getsockopt_int (socket, libluazmq.ZMQ_RCVMORE) == 1 
+            return libluazmq.zmq_getsockopt_int (socket, libluazmq.RCVMORE) == 1 
+        end,
+    },
+    setsockopt = {
+        subscribe = function (socket, filter) 
+            return libluazmq.zmq_setsockopt_string (socket, libluazmq.SUBSCRIBE, filter or '')
         end,
     },
     close = libluazmq.zmq_close,
