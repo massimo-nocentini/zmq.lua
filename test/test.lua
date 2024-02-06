@@ -232,7 +232,6 @@ function T:test_zmq_recv_send_loop ()
                     }) (pthread.join (thread_c))
                     unittest.assert.istrue 'Cannot receive message' (pthread.join (thread_s))
     
-                    os.execute 'sleep 0.2s'
                 end)
             end)
         end)
@@ -287,10 +286,8 @@ function T:test_zmq_recv_pub_sub ()
 
                         local flag, tbla = pthread.join (thread_a)
                         unittest.assert.equals 'Cannot receive message' (true, n) (flag, #tbla)
-
-                        -- unittest.assert.equals 'The content should be the same' (tblc) (tbla)
         
-                        continue = false
+                        continue = false -- stop the server
 
                         unittest.assert.istrue 'Cannot join the publisher pthread.' (pthread.join (thread_s))
                     end)
