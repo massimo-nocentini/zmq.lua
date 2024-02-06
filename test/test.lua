@@ -283,17 +283,16 @@ function T:test_zmq_recv_pub_sub ()
                         end)
 
                         local flag, tblc = pthread.join (thread_c)
-                        unittest.assert.equals 'Cannot receive message' (true, 10) (flag, #tblc)
+                        unittest.assert.equals 'Cannot receive message' (true, n) (flag, #tblc)
 
                         local flag, tbla = pthread.join (thread_a)
-                        unittest.assert.equals 'Cannot receive message' (true, 10) (flag, #tbla)
+                        unittest.assert.equals 'Cannot receive message' (true, n) (flag, #tbla)
 
                         -- unittest.assert.equals 'The content should be the same' (tblc) (tbla)
         
                         continue = false
 
-                        pthread.join (thread_s)
-                        os.execute 'sleep 0.2s'
+                        unittest.assert.istrue 'Cannot join the publisher pthread.' (pthread.join (thread_s))
                     end)
                 end)
             end)
