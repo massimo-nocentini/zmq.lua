@@ -188,8 +188,8 @@ function T:test_zmq_recv_send_loop ()
                 local thread_s = pthread.create {} (function ()
                     while true do
                         local msg = zmq.recv (server, 10)
-                        if msg == 'quit' then break end
-                        zmq.send (server, 'world')
+                        if msg == 'quit' then break
+                        else zmq.send (server, 'world') end
                     end
                 end)
 
