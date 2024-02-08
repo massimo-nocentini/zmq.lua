@@ -63,7 +63,7 @@ function T:test_zmq_recv ()
     
     local thread_s = pthread.create {} (function () return zmq.recv (server, 10) end)
     
-    zmq.send (client, msg) -- blocking call, that's why we need to start the server pthread first.
+    client:send (msg) -- blocking call, that's why we need to start the server pthread first.
         
     unittest.assert.equals 'Not the same message.' (true, msg, false) (pthread.join (thread_s))
 end
@@ -88,8 +88,8 @@ function T:test_zmq_recv_big_msg_tbl ()
         }
     end)
     
-    zmq.send (client, 'Hello', zmq.SNDMORE)
-    zmq.send (client, 'World')
+    client:send ('Hello', zmq.SNDMORE)
+    client:send 'World'
     
     unittest.assert.equals 'Cannot receive message' 
         (true, { 'Hello', 'World' }) (pthread.join (thread_s))
@@ -115,9 +115,9 @@ function T:test_zmq_recv_big_msg_str ()
         }
     end)
     
-    zmq.send (client, 'Hello', zmq.SNDMORE)
-    zmq.send (client, ' ', zmq.SNDMORE)
-    zmq.send (client, 'World')
+    client:send ('Hello', zmq.SNDMORE)
+    client:send (' ', zmq.SNDMORE)
+    client:send 'World'
     
     unittest.assert.equals 'Cannot receive message' 
         (true, 'Hello World' ) (pthread.join (thread_s))
@@ -138,12 +138,12 @@ function T:test_zmq_recv_send ()
 
     local thread_s = pthread.create {} (function ()
         local msg = zmq.recv (server, 10)
-        zmq.send (server, 'world')
+        server:send 'world'
         return msg
     end)
 
     local thread_c = pthread.create {} (function ()
-        zmq.send (client, 'hello')
+        client:send 'hello'
         return zmq.recv (client, 10)
     end)
 
@@ -172,17 +172,17 @@ function T:test_zmq_recv_send_loop ()
         while continue do
             local msg = zmq.recv (server, 10)
             if msg == 'quit' then continue = false
-            else zmq.send (server, 'world') end
+            else server:send 'world' end
         end
     end)
 
     local thread_c = pthread.create {} (function ()
         local tbl = {}
         for i = 1, n do
-            zmq.send (client, 'hello')
+            client:send 'hello'
             tbl[i] = zmq.recv (client, 10)
         end
-        zmq.send (client, 'quit')
+        client:send 'quit'
         return tbl
     end)
     
@@ -220,7 +220,7 @@ function T:test_zmq_recv_pub_sub ()
             temperature = math.random (215) - 80;
             relhumidity = math.random (50) + 10;
             local msg = string.format ("%05d %d %d", zipcode, temperature, relhumidity)
-            zmq.send (server, msg)
+            server:send (msg)
         end
     end)
 

@@ -41,6 +41,9 @@ local socket_mt = {
                 )
             )
         end,
+        send = function (socket, str, flags) 
+            return libluazmq.zmq_send (socket, str, flags or 0)
+        end
     },
 }
 
@@ -76,10 +79,6 @@ function zmq.recv_more (tbl)
         while recvmore do tbl[#tbl + 1], recvmore = zmq.recv (socket, len, flags) end
         return tbl
     end
-end
-
-function zmq.send (socket, str, flags) 
-    return libluazmq.zmq_send (socket, str, flags or 0)
 end
 
 return zmq
