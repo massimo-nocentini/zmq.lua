@@ -61,7 +61,7 @@ function T:test_zmq_recv ()
     server:bind { port = port }
     client:connect { port = port }
     
-    local thread_s = pthread.create {} (function () return zmq.recv (server, 10) end)
+    local thread_s = pthread.create (function () return zmq.recv (server, 10) end)
     
     client:send (msg) -- blocking call, that's why we need to start the server pthread first.
         
@@ -80,7 +80,7 @@ function T:test_zmq_recv_big_msg_tbl ()
     server:bind { port = port }
     client:connect { port = port }
     
-    local thread_s = pthread.create {} (function () 
+    local thread_s = pthread.create (function () 
         return zmq.recv_more {
             socket = server, 
             max_bytes = 10,
@@ -108,7 +108,7 @@ function T:test_zmq_recv_big_msg_str ()
     server:bind { port = port }
     client:connect { port = port }
     
-    local thread_s = pthread.create {} (function () 
+    local thread_s = pthread.create (function () 
         return zmq.recv_more {
             socket = server,
             max_bytes = 10,
@@ -136,13 +136,13 @@ function T:test_zmq_recv_send ()
     server:bind { port = port }
     client:connect { port = port }
 
-    local thread_s = pthread.create {} (function ()
+    local thread_s = pthread.create (function ()
         local msg = zmq.recv (server, 10)
         server:send 'world'
         return msg
     end)
 
-    local thread_c = pthread.create {} (function ()
+    local thread_c = pthread.create (function ()
         client:send 'hello'
         return zmq.recv (client, 10)
     end)
@@ -167,7 +167,7 @@ function T:test_zmq_recv_send_loop ()
     server:bind { port = port }
     client:connect { port = port }
 
-    local thread_s = pthread.create {} (function ()
+    local thread_s = pthread.create (function ()
         local continue = true
         while continue do
             local msg = zmq.recv (server, 10)
@@ -176,7 +176,7 @@ function T:test_zmq_recv_send_loop ()
         end
     end)
 
-    local thread_c = pthread.create {} (function ()
+    local thread_c = pthread.create (function ()
         local tbl = {}
         for i = 1, n do
             client:send 'hello'
@@ -213,7 +213,7 @@ function T:test_zmq_recv_pub_sub ()
     zmq.setsockopt.subscribe (client, '10001 ')
     zmq.setsockopt.subscribe (another, '10002 ')
 
-    local thread_s = pthread.create { } (function ()
+    local thread_s = pthread.create (function ()
         while continue do
             local zipcode, temperature, relhumidity;
             zipcode     = math.random (100000);
@@ -224,13 +224,13 @@ function T:test_zmq_recv_pub_sub ()
         end
     end)
 
-    local thread_c = pthread.create {} (function ()
+    local thread_c = pthread.create (function ()
         local tbl = {}
         for i = 1, n do tbl[i] = zmq.recv (client, 20) end
         return tbl
     end)
 
-    local thread_a = pthread.create {} (function ()
+    local thread_a = pthread.create (function ()
         local tbl = {}
         for i = 1, n do tbl[i] = zmq.recv (another, 20) end
         return tbl
