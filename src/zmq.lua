@@ -7,18 +7,11 @@ local zmq = {
         term = libluazmq.ctx_term,
         shutdown = libluazmq.ctx_shutdown,
     },
-    socket = {},
-    getsockopt = {
-        rcvmore = function (socket) 
-            return libluazmq.zmq_getsockopt_int (socket, libluazmq.RCVMORE) == 1 
-        end,
-    },
     setsockopt = {
         subscribe = function (socket, filter) 
             return libluazmq.zmq_setsockopt_string (socket, libluazmq.SUBSCRIBE, filter or '')
         end,
     },
-    close = libluazmq.zmq_close,
     version = libluazmq.zmq_version,
 }
 
@@ -26,11 +19,35 @@ setmetatable (zmq, {
     __index = libluazmq
 })
 
-setmetatable(zmq.socket, {
-    __call = function (self, ctx, socket_type)
-        return libluazmq.zmq_socket (ctx, socket_type)
-    end
-})
+local socket_mt = {
+    __close = libluazmq.zmq_close,
+    __index = {
+        close = libluazmq.zmq_close,
+        bind = function (socket, endpoint_tbl) 
+            return libluazmq.zmq_bind (socket,
+                string.format ('%s://%s:%d', 
+                    endpoint_tbl.transport or 'tcp',
+                    endpoint_tbl.host or '*',
+                    endpoint_tbl.port
+                )
+            )
+        end,
+        connect = function (socket, endpoint_tbl) 
+            return libluazmq.zmq_connect (socket, 
+                string.format ('%s://%s:%d', 
+                    endpoint_tbl.transport or 'tcp',
+                    endpoint_tbl.host or 'localhost',
+                    endpoint_tbl.port
+                )
+            )
+        end,
+    },
+}
+
+function zmq.socket (ctx, socket_type)
+    local socket = libluazmq.zmq_socket (ctx, socket_type)
+    return debug.setmetatable (socket, socket_mt)
+end
 
 function zmq.ctx.pcall (f)
     local ctx = zmq.ctx.new ()
@@ -40,35 +57,6 @@ function zmq.ctx.pcall (f)
         return ...
     end
     return R (pcall (f, ctx))
-end
-
-function zmq.socket.pcall (ctx, socket_type, f)
-    local socket = zmq.socket (ctx, socket_type)
-    local function R (...)
-        zmq.close (socket)
-        return ...
-    end
-    return R (pcall (f, socket))
-end
-
-function zmq.bind (socket, endpoint_tbl)
-    return libluazmq.zmq_bind (socket, 
-        string.format ('%s://%s:%d', 
-            endpoint_tbl.transport or 'tcp',
-            endpoint_tbl.host or '*',
-            endpoint_tbl.port
-        )
-    )
-end
-
-function zmq.connect (socket, endpoint_tbl)
-    return libluazmq.zmq_connect (socket, 
-        string.format ('%s://%s:%d', 
-            endpoint_tbl.transport or 'tcp',
-            endpoint_tbl.host or 'localhost',
-            endpoint_tbl.port
-        )
-    )
 end
 
 function zmq.recv (socket, len, flags) 

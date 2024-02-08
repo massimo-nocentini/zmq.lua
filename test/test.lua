@@ -33,144 +33,127 @@ end
 
 function T:test_zmq_ctx_socket ()    
     local socket = zmq.socket (self.ctx, zmq.REP)
+   
     unittest.assert.istrue 'Cannot create a socket' (socket ~= libc.stddef.NULL)
-    zmq.close (socket)
+
+    socket:close ()
 end
 
 function T:test_zmq_ctx_socket_pcall ()
     
-    unittest.assert.equals 'Cannot create a socket' (true, self.witness) (
-        zmq.socket.pcall (self.ctx, zmq.REP, function (socket)
-            unittest.assert.istrue 'Cannot create a socket' (socket ~= libc.stddef.NULL)
-            return self.witness
-        end)
-    )
+    local socket <close> = zmq.socket (self.ctx, zmq.REP)
+    unittest.assert.istrue 'Cannot create a socket' (socket ~= libc.stddef.NULL)
 end
 
 function T:test_zmq_bind ()
     
-    unittest.assert.equals 'Cannot create a socket' (true, self.witness) (
-        zmq.socket.pcall (self.ctx, zmq.REP, function (socket)
-            zmq.bind (socket, { port = 5555 })
-            return self.witness
-        end)
-    )
+    local socket <close> = zmq.socket (self.ctx, zmq.REP)
+    socket:bind { port = 5555 }
 end
 
 function T:test_zmq_recv ()
     
     local port, msg = 5555, 'Hello'
 
-    unittest.assert.equals 'Block not called' (true, true) (
-        zmq.socket.pcall (self.ctx, zmq.REP, function (server)
-            return zmq.socket.pcall (self.ctx, zmq.REQ, function (client)
+    local server <close> = zmq.socket (self.ctx, zmq.REP)
+    local client <close> = zmq.socket (self.ctx, zmq.REQ)
 
-                zmq.bind (server, { port = port })
-                zmq.connect (client, { port = port })
-                
-                local thread_s = pthread.create {} (function () return zmq.recv (server, 10) end)
-                
-                zmq.send (client, msg) -- blocking call, that's why we need to start the server pthread first.
-                 
-                unittest.assert.equals 'Not the same message.' (true, msg, false) (pthread.join (thread_s))
-            end)
-        end)
-    )
+    server:bind { port = port }
+    client:connect { port = port }
+    
+    local thread_s = pthread.create {} (function () return zmq.recv (server, 10) end)
+    
+    zmq.send (client, msg) -- blocking call, that's why we need to start the server pthread first.
+        
+    unittest.assert.equals 'Not the same message.' (true, msg, false) (pthread.join (thread_s))
 end
+
+
 
 function T:test_zmq_recv_big_msg_tbl ()
     
     local port = 5555
 
-    unittest.assert.equals 'Block not called' (true, true) (
-        zmq.socket.pcall (self.ctx, zmq.REP, function (server)
-            return zmq.socket.pcall (self.ctx, zmq.REQ, function (client)
+    local server <close> = zmq.socket (self.ctx, zmq.REP)
+    local client <close> = zmq.socket (self.ctx, zmq.REQ)
 
-                zmq.bind (server, { port = port })
-                zmq.connect (client, { port = port })
-                
-                local thread_s = pthread.create {} (function () 
-                    return zmq.recv_more {
-                        socket = server, 
-                        max_bytes = 10,
-                        handler = false
-                    }
-                end)
-                
-                zmq.send (client, 'Hello', zmq.SNDMORE)
-                zmq.send (client, 'World')
-                
-                unittest.assert.equals 'Cannot receive message' 
-                    (true, { 'Hello', 'World' }) (pthread.join (thread_s))
+    server:bind { port = port }
+    client:connect { port = port }
+    
+    local thread_s = pthread.create {} (function () 
+        return zmq.recv_more {
+            socket = server, 
+            max_bytes = 10,
+            handler = false
+        }
+    end)
+    
+    zmq.send (client, 'Hello', zmq.SNDMORE)
+    zmq.send (client, 'World')
+    
+    unittest.assert.equals 'Cannot receive message' 
+        (true, { 'Hello', 'World' }) (pthread.join (thread_s))
 
-            end)
-        end)
-    )
 end
+
 
 
 function T:test_zmq_recv_big_msg_str ()
     
     local port = 5555
 
-    unittest.assert.equals 'Block not called' (true, true) (
-        zmq.socket.pcall (self.ctx, zmq.REP, function (server)
-            return zmq.socket.pcall (self.ctx, zmq.REQ, function (client)
+    local server <close> = zmq.socket (self.ctx, zmq.REP)
+    local client <close> = zmq.socket (self.ctx, zmq.REQ)
 
-                zmq.bind (server, { port = port })
-                zmq.connect (client, { port = port })
-                
-                local thread_s = pthread.create {} (function () 
-                    return zmq.recv_more {
-                        socket = server,
-                        max_bytes = 10,
-                    }
-                end)
-                
-                zmq.send (client, 'Hello', zmq.SNDMORE)
-                zmq.send (client, ' ', zmq.SNDMORE)
-                zmq.send (client, 'World')
-                
-                unittest.assert.equals 'Cannot receive message' 
-                    (true, 'Hello World' ) (pthread.join (thread_s))
+    server:bind { port = port }
+    client:connect { port = port }
+    
+    local thread_s = pthread.create {} (function () 
+        return zmq.recv_more {
+            socket = server,
+            max_bytes = 10,
+        }
+    end)
+    
+    zmq.send (client, 'Hello', zmq.SNDMORE)
+    zmq.send (client, ' ', zmq.SNDMORE)
+    zmq.send (client, 'World')
+    
+    unittest.assert.equals 'Cannot receive message' 
+        (true, 'Hello World' ) (pthread.join (thread_s))
 
-            end)
-        end)
-    )
 end
+
+
 
 function T:test_zmq_recv_send ()
     
     local port = 5555
 
-    unittest.assert.equals 'Block not called' (true, true) (
-        zmq.socket.pcall (self.ctx, zmq.REP, function (server)
-            return zmq.socket.pcall (self.ctx, zmq.REQ, function (client)
+    local server <close> = zmq.socket (self.ctx, zmq.REP)
+    local client <close> = zmq.socket (self.ctx, zmq.REQ)
+    
+    server:bind { port = port }
+    client:connect { port = port }
 
-                zmq.bind (server, { port = port })
-                zmq.connect (client, { port = port })
+    local thread_s = pthread.create {} (function ()
+        local msg = zmq.recv (server, 10)
+        zmq.send (server, 'world')
+        return msg
+    end)
 
-                local thread_s = pthread.create {} (function ()
-                    local msg = zmq.recv (server, 10)
-                    zmq.send (server, 'world')
-                    return msg
-                end)
+    local thread_c = pthread.create {} (function ()
+        zmq.send (client, 'hello')
+        return zmq.recv (client, 10)
+    end)
 
-                local thread_c = pthread.create {} (function ()
-                    zmq.send (client, 'hello')
-                    return zmq.recv (client, 10)
-                end)
+    local flag_c, msg_from_server = pthread.join (thread_c)
+    local flag_s, msg_from_client = pthread.join (thread_s)
+    
+    unittest.assert.equals 'All ok' (true, true) (flag_s, flag_c)
+    unittest.assert.equals 'Cannot receive message' 
+        ('hello', 'world') (msg_from_client, msg_from_server)
 
-                local flag_c, msg_from_server = pthread.join (thread_c)
-                local flag_s, msg_from_client = pthread.join (thread_s)
-                
-                unittest.assert.equals 'All ok' (true, true) (flag_s, flag_c)
-                unittest.assert.equals 'Cannot receive message' 
-                    ('hello', 'world') (msg_from_client, msg_from_server)
-
-            end)
-        end)
-    )
 end
 
 
@@ -178,97 +161,90 @@ function T:test_zmq_recv_send_loop ()
     
     local port, n = 5555, 10
 
-    unittest.assert.equals 'Block not called' (true, true) (
-        zmq.socket.pcall (self.ctx, zmq.REP, function (server)
-            return zmq.socket.pcall (self.ctx, zmq.REQ, function (client)
+    local server <close> = zmq.socket (self.ctx, zmq.REP)
+    local client <close> = zmq.socket (self.ctx, zmq.REQ)
 
-                zmq.bind (server, { port = port })
-                zmq.connect (client, { port = port })
+    server:bind { port = port }
+    client:connect { port = port }
 
-                local thread_s = pthread.create {} (function ()
-                    while true do
-                        local msg = zmq.recv (server, 10)
-                        if msg == 'quit' then break
-                        else zmq.send (server, 'world') end
-                    end
-                end)
+    local thread_s = pthread.create {} (function ()
+        local continue = true
+        while continue do
+            local msg = zmq.recv (server, 10)
+            if msg == 'quit' then continue = false
+            else zmq.send (server, 'world') end
+        end
+    end)
 
-                local thread_c = pthread.create {} (function ()
-                    local tbl = {}
-                    for i = 1, n do
-                        zmq.send (client, 'hello')
-                        tbl[i] = zmq.recv (client, 10)
-                    end
-                    zmq.send (client, 'quit')
-                    return tbl
-                end)
-                
-                unittest.assert.equals 'Cannot receive message' (true, {
-                    'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world'
-                }) (pthread.join (thread_c))
+    local thread_c = pthread.create {} (function ()
+        local tbl = {}
+        for i = 1, n do
+            zmq.send (client, 'hello')
+            tbl[i] = zmq.recv (client, 10)
+        end
+        zmq.send (client, 'quit')
+        return tbl
+    end)
+    
+    unittest.assert.equals 'Cannot receive message' (true, {
+        'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world', 'world'
+    }) (pthread.join (thread_c))
 
-                unittest.assert.istrue 'Cannot receive message' (pthread.join (thread_s))
+    unittest.assert.istrue 'Cannot receive message' (pthread.join (thread_s))
 
-            end)
-        end)
-    )
 end
+
 
 
 function T:test_zmq_recv_pub_sub ()
     
     local port, n = 5555, 10
 
-    unittest.assert.equals 'Block not called' (true, true, true) (
-        zmq.socket.pcall (self.ctx, zmq.PUB, function (server)
-            return zmq.socket.pcall (self.ctx, zmq.SUB, function (client)
-                return zmq.socket.pcall (self.ctx, zmq.SUB, function (another)
+    local server <close> = zmq.socket (self.ctx, zmq.PUB)
+    local client <close> = zmq.socket (self.ctx, zmq.SUB)
+    local another <close> = zmq.socket (self.ctx, zmq.SUB)
 
-                    local continue = true
+    local continue = true
 
-                    zmq.bind (server, { port = port })
-                    zmq.connect (client, { port = port })
-                    zmq.connect (another, { port = port })
-    
-                    zmq.setsockopt.subscribe (client, '10001 ')
-                    zmq.setsockopt.subscribe (another, '10002 ')
+    server:bind { port = port }
+    client:connect { port = port }
+    another:connect { port = port }
 
-                    local thread_s = pthread.create { } (function ()
-                        while continue do
-                            local zipcode, temperature, relhumidity;
-                            zipcode     = math.random (100000);
-                            temperature = math.random (215) - 80;
-                            relhumidity = math.random (50) + 10;
-                            local msg = string.format ("%05d %d %d", zipcode, temperature, relhumidity)
-                            zmq.send (server, msg)
-                        end
-                    end)
-    
-                    local thread_c = pthread.create {} (function ()
-                        local tbl = {}
-                        for i = 1, n do tbl[i] = zmq.recv (client, 20) end
-                        return tbl
-                    end)
+    zmq.setsockopt.subscribe (client, '10001 ')
+    zmq.setsockopt.subscribe (another, '10002 ')
 
-                    local thread_a = pthread.create {} (function ()
-                        local tbl = {}
-                        for i = 1, n do tbl[i] = zmq.recv (another, 20) end
-                        return tbl
-                    end)
+    local thread_s = pthread.create { } (function ()
+        while continue do
+            local zipcode, temperature, relhumidity;
+            zipcode     = math.random (100000);
+            temperature = math.random (215) - 80;
+            relhumidity = math.random (50) + 10;
+            local msg = string.format ("%05d %d %d", zipcode, temperature, relhumidity)
+            zmq.send (server, msg)
+        end
+    end)
 
-                    local flag, tblc = pthread.join (thread_c)
-                    unittest.assert.equals 'Cannot receive message' (true, n) (flag, #tblc)
+    local thread_c = pthread.create {} (function ()
+        local tbl = {}
+        for i = 1, n do tbl[i] = zmq.recv (client, 20) end
+        return tbl
+    end)
 
-                    local flag, tbla = pthread.join (thread_a)
-                    unittest.assert.equals 'Cannot receive message' (true, n) (flag, #tbla)
-    
-                    continue = false -- stop the server
+    local thread_a = pthread.create {} (function ()
+        local tbl = {}
+        for i = 1, n do tbl[i] = zmq.recv (another, 20) end
+        return tbl
+    end)
 
-                    unittest.assert.istrue 'Cannot join the publisher pthread.' (pthread.join (thread_s))
-                end)
-            end)
-        end)
-    )
+    local flag, tblc = pthread.join (thread_c)
+    unittest.assert.equals 'Cannot receive message' (true, n) (flag, #tblc)
+
+    local flag, tbla = pthread.join (thread_a)
+    unittest.assert.equals 'Cannot receive message' (true, n) (flag, #tbla)
+
+    continue = false -- stop the server
+
+    unittest.assert.istrue 'Cannot join the publisher pthread.' (pthread.join (thread_s))
 end
 
 
