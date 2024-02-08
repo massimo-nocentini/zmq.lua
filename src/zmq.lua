@@ -55,15 +55,15 @@ local socket_mt = {
         end,
         recv_more = function (socket, tbl)
 
-            local len, flags, return_str = tbl.max_bytes, tbl.flags or 0, tbl.handler
+            local len, flags, ret = tbl.max_bytes, tbl.flags or 0, tbl.handler
         
-            if return_str == nil then return_str = '' end
+            if ret == nil then ret = '' end
         
-            local typ = type(return_str)
+            local typ = type(ret)
             if typ == 'string' then
                 return libluazmq.zmq_recv_more (socket, len, flags)
             elseif typ == 'table' then
-                local tbl, recvmore = return_str, true
+                local tbl, recvmore = ret, true
                 while recvmore do tbl[#tbl + 1], recvmore = socket:recv (len, flags) end
                 return tbl
             end

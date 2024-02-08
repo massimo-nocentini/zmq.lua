@@ -237,11 +237,92 @@ function T:test_zmq_recv_pub_sub ()
 
     unittest.assert.istrue 'Cannot join the publisher pthread.' (pthread.join (thread_s))
 
-
     server:close ()
     client:close ()
     another:close ()
 end
 
+
+function T:test_zmq_ventilator ()
+    
+    local port_server, port_sink = 5557, 5558
+
+    local workers = {}
+
+    local continue = true
+
+
+    local pth_server = pthread.create (function ()
+        local ctx = zmq.ctx.new ()
+        
+        local server  = zmq.socket (ctx, zmq.PUSH)
+        local sink  = zmq.socket (ctx, zmq.PUSH)
+    
+        server:bind { port = port_server }
+        sink:connect { port = port_sink }
+
+        sink:send '0' -- signals the start of the batch
+
+        local total_msec = 0
+        for task = 1, 100 do
+            local msec = math.random (100)
+            total_msec = total_msec + msec
+            print ('ventilator: 0.' .. msec .. 's')
+            sender:send (tostring (msec))
+        end
+        
+        print ('Total elapsed time: ' .. total_msec .. ' msec')
+
+        server:close ()
+        sink:close ()
+
+        zmq.ctx.term (ctx)
+
+        return total_msec
+    end)
+
+    local function W ()
+        local ctx = zmq.ctx.new ()
+        local receiver = zmq.socket (ctx, zmq.PULL)
+        local sender = zmq.socket (ctx, zmq.PUSH)
+        receiver:connect { port = port_server }
+        sender:connect { port = port_sink }
+        while continue do
+            local msg = receiver:recv (10)
+            print ('worker: 0.'.. msg .. 's')
+            os.execute ('sleep 0.' .. msg .. 's')
+            sender:send ''
+        end
+        receiver:close ()
+        sender:close ()
+        zmq.ctx.term (ctx)
+    end
+
+    for i = 1, 1 do workers[i] = pthread.create (W) end
+
+    local pth_sink = pthread.create (function () 
+        local ctx = zmq.ctx.new ()
+        local sink = zmq.socket (ctx, zmq.PULL)
+        sink:bind { port = port_sink }
+        print ('sink accepting: ', sink:recv (10))
+        local total_msec = os.time ()
+        for task = 1, 100 do
+            print ('sink received', sink:recv (10))
+            if task % 10 == 0 then print (':') else print ('.') end
+        end
+        sink:close ()
+        continue = false
+        zmq.ctx.term (ctx)
+        return os.time () - total_msec
+    end)
+
+
+    
+
+    print ('sink: ', pthread.join (pth_sink))
+    for i = 1, 10 do print ('worker: ', i, pthread.join (workers[i])) end
+    print ('server: ', pthread.join (pth_server))
+    
+end
 
 print (unittest.api.suite (T))
