@@ -44,6 +44,11 @@ function T:test_zmq_bind ()
     zmq.socket (self.ctx, zmq.REP):bind { port = 5555 }:close ()
 end
 
+
+function T:_test_zmq_bind_recv_DONTWAIT ()
+    zmq.socket (self.ctx, zmq.REP):bind { port = 5555 }:recv (10, zmq.DONTWAIT):close ()
+end
+
 function T:test_zmq_recv ()
     
     local port, msg = 5555, 'Hello'
