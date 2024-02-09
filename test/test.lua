@@ -280,7 +280,7 @@ end
 
 function T:test_zmq_ventilator ()
     
-    local port_server, port_sink, nworkers, ntasks = 5557, 5558, 10, 100
+    local port_server, port_sink, nworkers, ntasks = 5557, 5558, 20, 100
 
     -- for the sink
     local sink_receiver_socket = zmq.socket (self.ctx, zmq.PULL):bind { port = port_sink }
@@ -348,7 +348,7 @@ function T:test_zmq_ventilator ()
 
         local total_msec = 0
         for task = 1, ntasks do
-            local msec = math.random (100)
+            local msec = math.random (1000)
             total_msec = total_msec + msec
             sender:send (tostring (msec / 1000))
         end
