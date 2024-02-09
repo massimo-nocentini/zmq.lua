@@ -216,14 +216,7 @@ end
 function T:test_PUB_all_messages_lost ()
     
     local server  = zmq.socket (self.ctx, zmq.PUB):bind { port = 5555 }
-    for i = 1, 10 do
-        local zipcode, temperature, relhumidity;
-        zipcode     = math.random (100000);
-        temperature = math.random (215) - 80;
-        relhumidity = math.random (50) + 10;
-        local msg = string.format ("%05d %d %d", zipcode, temperature, relhumidity)
-        server:send (msg)
-    end
+    for i = 1, 1000 do server:send 'hello' end
     server:close ()
 
 end
