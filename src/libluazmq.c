@@ -208,7 +208,7 @@ int l_zmq_msg_send(lua_State *L)
         luaL_error(L, "zmq_msg_send: sent %d bytes instead of %d.", s, size);
     }
 
-    lua_pushinteger(L, s);
+    lua_pushvalue(L, 1);
 
     return 1;
 }

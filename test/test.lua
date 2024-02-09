@@ -58,7 +58,7 @@ function T:test_zmq_recv ()
 end
 
 function T:test_zmq_recv_pthreaded ()
-    
+
     local port, msg = 5555, 'Hello'
 
     local thread_s = pthread.create (function () 
@@ -75,64 +75,63 @@ function T:test_zmq_recv_pthreaded ()
     client:close ()
 end
 
-function T:test_zmq_recv_big_msg_tbl ()
+function T:test_zmq_recv_more_return_table_pthreaded ()
     
     local port = 5555
-
-    local server = zmq.socket (self.ctx, zmq.REP)
+    
+    local thread_s = pthread.create (function ()
+        local server = zmq.socket (self.ctx, zmq.REP):bind { port = port }
+        local v = server:recv_more { max_bytes = 10, handler = {} }
+        server:close ()
+        return v
+    end)
+    
     local client = zmq.socket (self.ctx, zmq.REQ)
-
-    server:bind { port = port }
-    client:connect { port = port }
-    
-    local thread_s = pthread.create (function () return server:recv_more { max_bytes = 10, handler = {} } end)
-    
-    client
+        :connect { port = port }
         :send ('Hello', zmq.SNDMORE)
         :send 'World'
     
     unittest.assert.equals 'Cannot receive message' 
         (true, { 'Hello', 'World' }) (pthread.join (thread_s))
 
-    server:close ()
     client:close ()
 
 end
 
-function T:test_zmq_recv_big_msg_str ()
+function T:test_zmq_recv_more_return_string_pthreaded ()
     
     local port = 5555
 
-    local server  = zmq.socket (self.ctx, zmq.REP)
-    local client  = zmq.socket (self.ctx, zmq.REQ)
+    local thread_s = pthread.create (function () 
+        local server = zmq.socket (self.ctx, zmq.REP):bind { port = port }
+        local v = server:recv_more { max_bytes = 10 }
+        server:close ()
+        return v
+    end)
 
-    server:bind { port = port }
-    client:connect { port = port }
-    
-    local thread_s = pthread.create (function () return server:recv_more { max_bytes = 10 } end)
-    
-    client:send ('Hello', zmq.SNDMORE)
-    client:send (' ', zmq.SNDMORE)
-    client:send 'World'
+    local client = zmq.socket (self.ctx, zmq.REQ)
+        :connect { port = port }
+        :send ('Hello', zmq.SNDMORE)
+        :send (' ', zmq.SNDMORE)
+        :send 'World'
     
     unittest.assert.equals 'Cannot receive message' 
         (true, 'Hello World' ) (pthread.join (thread_s))
 
-    server:close ()
     client:close ()
 
 end
 
 
-function T:test_zmq_msg_send_without_threads ()
+function T:test_zmq_msg_send ()
 
     local port = 5555
 
-    local client  = zmq.socket (self.ctx, zmq.REQ):connect { port = port }
-
-    client:send_msg ('Hello', zmq.SNDMORE)
-    client:send_msg (' ', zmq.SNDMORE)
-    client:send_msg 'World'
+    local client  = zmq.socket (self.ctx, zmq.REQ)
+        :connect { port = port }
+        :send_msg ('Hello', zmq.SNDMORE)
+        :send_msg (' ', zmq.SNDMORE)
+        :send_msg 'World'
 
     local server  = zmq.socket (self.ctx, zmq.REP):bind { port = port }
     
@@ -153,34 +152,31 @@ function T:test_zmq_msg_send_without_threads ()
 
 end
 
-function T:test_zmq_recv_send ()
+function T:test_REP_REQ_pthreaded ()
     
     local port = 5555
 
     local server = zmq.socket (self.ctx, zmq.REP)
     local client = zmq.socket (self.ctx, zmq.REQ)
-    
-    server:bind { port = port }
-    client:connect { port = port }
 
     local thread_s = pthread.create (function ()
-        local msg = server:recv (10)
+        local v = server:bind { port = port }:recv (10)
         server:send 'world'
-        return msg
+        return v
     end)
 
     local thread_c = pthread.create (function ()
-        client:send 'hello'
-        return client:recv (10)
+        return client:connect { port = port }
+                     :send 'hello'
+                     :recv (10)
     end)
 
     local flag_c, msg_from_server = pthread.join (thread_c)
     local flag_s, msg_from_client = pthread.join (thread_s)
     
     unittest.assert.equals 'All ok' (true, true) (flag_s, flag_c)
-    unittest.assert.equals 'Cannot receive message' 
+    unittest.assert.equals ''
         ('hello', 'world') (msg_from_client, msg_from_server)
-
     
     server:close ()
     client:close ()
