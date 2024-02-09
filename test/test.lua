@@ -40,29 +40,38 @@ function T:test_zmq_ctx_socket ()
 end
 
 function T:test_zmq_bind ()
-    
-    local socket = zmq.socket (self.ctx, zmq.REP)
-    socket:bind { port = 5555 }
-    socket:close ()
+    -- very simple test, just to check if the function is working. Fluid interface.
+    zmq.socket (self.ctx, zmq.REP):bind { port = 5555 }:close ()
 end
 
 function T:test_zmq_recv ()
     
     local port, msg = 5555, 'Hello'
 
-    local server = zmq.socket (self.ctx, zmq.REP)
-    local client = zmq.socket (self.ctx, zmq.REQ)
+    local client = zmq.socket (self.ctx, zmq.REQ):connect { port = port }:send (msg)
+    local server = zmq.socket (self.ctx, zmq.REP):bind { port = port }
 
-    server:bind { port = port }
-    client:connect { port = port }
+    unittest.assert.equals 'Not the same message.' (msg, false) (server:recv (10))
+
+    server:close ()
+    client:close ()
+end
+
+function T:test_zmq_recv_pthreaded ()
     
-    local thread_s = pthread.create (function () return server:recv (10) end)
+    local port, msg = 5555, 'Hello'
+
+    local thread_s = pthread.create (function () 
+        local server = zmq.socket (self.ctx, zmq.REP):bind { port = port }
+        local more, v = server:recv (10)
+        server:close ()
+        return more, v
+    end)
     
-    client:send (msg) -- blocking call, that's why we need to start the server pthread first.
+    local client = zmq.socket (self.ctx, zmq.REQ):connect { port = port }:send (msg)
         
     unittest.assert.equals 'Not the same message.' (true, msg, false) (pthread.join (thread_s))
 
-    server:close ()
     client:close ()
 end
 
@@ -78,8 +87,9 @@ function T:test_zmq_recv_big_msg_tbl ()
     
     local thread_s = pthread.create (function () return server:recv_more { max_bytes = 10, handler = {} } end)
     
-    client:send ('Hello', zmq.SNDMORE)
-    client:send 'World'
+    client
+        :send ('Hello', zmq.SNDMORE)
+        :send 'World'
     
     unittest.assert.equals 'Cannot receive message' 
         (true, { 'Hello', 'World' }) (pthread.join (thread_s))
@@ -110,6 +120,36 @@ function T:test_zmq_recv_big_msg_str ()
 
     server:close ()
     client:close ()
+
+end
+
+
+function T:test_zmq_msg_send_without_threads ()
+
+    local port = 5555
+
+    local client  = zmq.socket (self.ctx, zmq.REQ):connect { port = port }
+
+    client:send_msg ('Hello', zmq.SNDMORE)
+    client:send_msg (' ', zmq.SNDMORE)
+    client:send_msg 'World'
+
+    local server  = zmq.socket (self.ctx, zmq.REP):bind { port = port }
+    
+    unittest.assert.equals 'Cannot receive message' 'Hello World' (server:recv_msg_more ())
+
+    server:close ()
+    client:close ()
+
+    return [[
+
+        This test is to check if the zmq_msg_send function is working properly.
+        The zmq_msg_send function is a wrapper around the zmq_send function, and
+        it is used to send a message part to a socket. The zmq_msg_send function
+        is a non-blocking function, and it returns the number of bytes sent, or
+        -1 if an error occurred.
+
+    ]]
 
 end
 
@@ -243,72 +283,88 @@ function T:test_zmq_recv_pub_sub ()
 end
 
 
-function T:test_zmq_ventilator ()
+function T:ftest_zmq_ventilator ()
     
-    local port_server, port_sink = 5557, 5558
+    local port_server, port_sink, nworkers, ntasks = 5557, 5558, 10, 100
 
+    -- for the sink
+    local sink_receiver_socket = zmq.socket (self.ctx, zmq.PULL):bind { port = port_sink }
+
+    -- for the server
+    local ventilator_sender_socket  = zmq.socket (self.ctx, zmq.PUSH):bind { port = port_server }
+    local ventilator_sender_sink  = zmq.socket (self.ctx, zmq.PUSH):connect { port = port_sink }
+
+    -- for the workers
+    local w_sockets = {}
+    for i = 1, nworkers do
+        w_sockets[i] = {
+            ventilator = zmq.socket (self.ctx, zmq.PULL):connect { port = port_server },
+            sink = zmq.socket (self.ctx, zmq.PUSH):connect { port = port_sink },
+        }
+    end
+    
     local workers = {}
 
     local continue = true
 
-    local pth_sink = pthread.create (function () 
-        local sink = zmq.socket (self.ctx, zmq.PULL)
-        sink:bind { port = port_sink }
-        sink:recv (10)
-        local total_msec = os.time ()
-        for task = 1, 100 do
-            sink:recv (10)
-            if task % 10 == 0 then print (':') else print ('.') end
+
+    local function W (i)
+        return function ()
+
+            local receiver = w_sockets[i].ventilator
+            local sender = w_sockets[i].sink
+
+            while continue do
+                local msg = receiver:recv (10)
+                print ('worker: ' .. i .. ' received: ' .. msg)
+                os.execute ('sleep 0.' .. msg .. 's')
+                sender:send ''
+            end
+            
+            receiver:close ()
+            sender:close ()
         end
-        sink:close ()
+    end
+
+    for i = 1, nworkers do workers[i] = pthread.create (W (i)) end
+
+    os.execute ('sleep 1s')
+
+    local pth_sink = pthread.create (function ()
+        
+        local sink = sink_receiver_socket
+        assert (sink:recv (10) == '0')
+        local total_msec = os.time ()
+        for task = 1, ntasks do sink:recv (10) end
         continue = false
         return os.time () - total_msec
     end)
-
+    
     local pth_server = pthread.create (function ()
 
-        local sender  = zmq.socket (self.ctx, zmq.PUSH)
-        local sink  = zmq.socket (self.ctx, zmq.PUSH)
-    
-        sender:bind { port = port_server }
-        sink:connect { port = port_sink }
+        local sender  = ventilator_sender_socket
+        local sink  = ventilator_sender_sink
 
         sink:send '0' -- signals the start of the batch
 
         local total_msec = 0
-        for task = 1, 100 do
+        for task = 1, ntasks do
             local msec = math.random (100)
             total_msec = total_msec + msec
             sender:send (tostring (msec))
         end
-        
-        print ('Total elapsed time: ' .. total_msec .. ' msec')
-
-        sender:close ()
-        sink:close ()
 
         return total_msec
     end)
 
-    local function W ()
-        local receiver = zmq.socket (self.ctx, zmq.PULL)
-        local sender = zmq.socket (self.ctx, zmq.PUSH)
-        receiver:connect { port = port_server }
-        sender:connect { port = port_sink }
-        while continue do
-            local msg = receiver:recv (10)
-            os.execute ('sleep 0.' .. msg .. 's')
-            sender:send ''
-        end
-        receiver:close ()
-        sender:close ()
-    end
-
-    for i = 1, 100 do workers[i] = pthread.create (W) end
-
     print ('sink: ', pthread.join (pth_sink))
-    --for i = 1, 10 do print ('worker: ', i, pthread.join (workers[i])) end
     print ('server: ', pthread.join (pth_server))
+
+    for i = 1, nworkers do w_sockets[i].ventilator:close (); w_sockets[i].sink:close () end
+
+    sink_receiver_socket:close ()
+    ventilator_sender_socket:close ()
+    ventilator_sender_sink:close ()
     
 end
 

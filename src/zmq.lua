@@ -67,7 +67,9 @@ local socket_mt = {
                 while recvmore do tbl[#tbl + 1], recvmore = socket:recv (len, flags) end
                 return tbl
             end
-        end
+        end,
+        send_msg = libluazmq.zmq_msg_send,
+        recv_msg_more = libluazmq.zmq_msg_recv_more,
     },
 }
 

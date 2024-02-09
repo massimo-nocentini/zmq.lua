@@ -83,7 +83,9 @@ int l_zmq_bind(lua_State *L)
     if (error_flag)
         raise_zmq_errno(L);
 
-    return 0;
+    lua_pushvalue(L, 1);
+
+    return 1;
 }
 
 int l_zmq_connect(lua_State *L)
@@ -96,7 +98,9 @@ int l_zmq_connect(lua_State *L)
     if (error_flag)
         raise_zmq_errno(L);
 
-    return 0;
+    lua_pushvalue(L, 1);
+
+    return 1;
 }
 
 int l_zmq_recv(lua_State *L)
@@ -174,6 +178,84 @@ int l_zmq_recv_more(lua_State *L)
     return 1;
 }
 
+int l_zmq_msg_send(lua_State *L)
+{
+    void *socket = lua_touserdata(L, 1);
+    size_t size;
+    const char *str = luaL_checklstring(L, 2, &size);
+    int flags = lua_type(L, 3) == LUA_TNUMBER ? luaL_checkinteger(L, 3) : 0;
+
+    zmq_msg_t msg;
+    int s = zmq_msg_init_size(&msg, size);
+
+    if (s == -1)
+    {
+        raise_zmq_errno(L);
+    }
+
+    memcpy(zmq_msg_data(&msg), str, size);
+    s = zmq_msg_send(&msg, socket, flags);
+
+    zmq_msg_close(&msg);
+
+    if (s == -1)
+    {
+        raise_zmq_errno(L);
+    }
+
+    if (s != size)
+    {
+        luaL_error(L, "zmq_msg_send: sent %d bytes instead of %d.", s, size);
+    }
+
+    lua_pushinteger(L, s);
+
+    return 1;
+}
+
+int l_zmq_msg_recv_more(lua_State *L)
+{
+    void *socket = lua_touserdata(L, 1);
+    int flags = lua_type(L, 2) == LUA_TNUMBER ? luaL_checkinteger(L, 2) : 0;
+
+    zmq_msg_t msg;
+
+    int n, more = 1;
+
+    luaL_Buffer b;
+
+    luaL_buffinit(L, &b);
+
+    while (more)
+    {
+        n = zmq_msg_init(&msg);
+
+        if (n == -1)
+        {
+            raise_zmq_errno(L);
+        }
+
+        n = zmq_msg_recv(&msg, socket, flags);
+
+        if (n == -1)
+        {
+            zmq_msg_close(&msg);
+            raise_zmq_errno(L);
+        }
+
+        size_t size = zmq_msg_size(&msg);
+        const char *data = zmq_msg_data(&msg);
+
+        luaL_addlstring(&b, data, size);
+
+        more = zmq_msg_more(&msg);
+    }
+
+    luaL_pushresult(&b);
+
+    return 1;
+}
+
 int l_zmq_send(lua_State *L)
 {
     void *socket = lua_touserdata(L, 1);
@@ -193,7 +275,7 @@ int l_zmq_send(lua_State *L)
         luaL_error(L, "zmq_send: sent %d bytes instead of %d.", n, size);
     }
 
-    lua_pushinteger(L, n);
+    lua_pushvalue(L, 1);
 
     return 1;
 }
@@ -261,6 +343,8 @@ const struct luaL_Reg libluazmq[] = {
     {"zmq_version", l_zmq_version},
     {"zmq_getsockopt_int", l_zmq_getsockopt_int},
     {"zmq_setsockopt_string", l_zmq_setsockopt_string},
+    {"zmq_msg_recv_more", l_zmq_msg_recv_more},
+    {"zmq_msg_send", l_zmq_msg_send},
     {"zmq_recv_more", l_zmq_recv_more},
     {NULL, NULL} /* sentinel */
 };
