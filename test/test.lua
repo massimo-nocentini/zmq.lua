@@ -156,59 +156,51 @@ function T:test_REP_REQ_pthreaded ()
     
     local port = 5555
 
-    local server = zmq.socket (self.ctx, zmq.REP)
-    local client = zmq.socket (self.ctx, zmq.REQ)
-
     local thread_s = pthread.create (function ()
+        local server = zmq.socket (self.ctx, zmq.REP)
         local v = server:bind { port = port }:recv (10)
-        server:send 'world'
+        server:send 'world':close ()
         return v
     end)
 
     local thread_c = pthread.create (function ()
-        return client:connect { port = port }
+        local client = zmq.socket (self.ctx, zmq.REQ)
+        local v = client:connect { port = port }
                      :send 'hello'
                      :recv (10)
+        client:close ()
+        return v
     end)
 
     local flag_c, msg_from_server = pthread.join (thread_c)
     local flag_s, msg_from_client = pthread.join (thread_s)
     
     unittest.assert.equals 'All ok' (true, true) (flag_s, flag_c)
-    unittest.assert.equals ''
-        ('hello', 'world') (msg_from_client, msg_from_server)
+    unittest.assert.equals '' ('hello', 'world') (msg_from_client, msg_from_server)
     
-    server:close ()
-    client:close ()
 end
 
 
-function T:test_zmq_recv_send_loop ()
+function T:test_REP_REQ_loop_pthreaded ()
     
     local port, n = 5555, 10
 
-    local server = zmq.socket (self.ctx, zmq.REP)
-    local client = zmq.socket (self.ctx, zmq.REQ)
-
-    server:bind { port = port }
-    client:connect { port = port }
-
     local thread_s = pthread.create (function ()
+        local server = zmq.socket (self.ctx, zmq.REP):bind { port = port }
         local continue = true
         while continue do
             local msg = server:recv (10)
             if msg == 'quit' then continue = false
             else server:send 'world' end
         end
+        server:close ()
     end)
 
     local thread_c = pthread.create (function ()
+        local client = zmq.socket (self.ctx, zmq.REQ):connect { port = port }
         local tbl = {}
-        for i = 1, n do
-            client:send 'hello'
-            tbl[i] = client:recv (10)
-        end
-        client:send 'quit'
+        for i = 1, n do tbl[i] = client:send 'hello':recv (10) end
+        client:send 'quit':close ()
         return tbl
     end)
     
@@ -218,29 +210,16 @@ function T:test_zmq_recv_send_loop ()
 
     unittest.assert.istrue 'Cannot receive message' (pthread.join (thread_s))
 
-    server:close ()
-    client:close ()
-
 end
 
 function T:test_zmq_recv_pub_sub ()
     
     local port, n = 5555, 10
 
-    local server  = zmq.socket (self.ctx, zmq.PUB)
-    local client  = zmq.socket (self.ctx, zmq.SUB)
-    local another  = zmq.socket (self.ctx, zmq.SUB)
-
     local continue = true
 
-    server:bind { port = port }
-    client:connect { port = port }
-    another:connect { port = port }
-
-    client:subscribe '10001 '
-    another:subscribe '10002 '
-
     local thread_s = pthread.create (function ()
+        local server  = zmq.socket (self.ctx, zmq.PUB):bind { port = port }
         while continue do
             local zipcode, temperature, relhumidity;
             zipcode     = math.random (100000);
@@ -249,17 +228,22 @@ function T:test_zmq_recv_pub_sub ()
             local msg = string.format ("%05d %d %d", zipcode, temperature, relhumidity)
             server:send (msg)
         end
+        server:close ()
     end)
 
     local thread_c = pthread.create (function ()
+        local client  = zmq.socket (self.ctx, zmq.SUB):connect { port = port }:subscribe '10001 '
         local tbl = {}
         for i = 1, n do tbl[i] = client:recv (20) end
+        client:close ()
         return tbl
     end)
 
     local thread_a = pthread.create (function ()
+        local another  = zmq.socket (self.ctx, zmq.SUB):connect { port = port }:subscribe '10002 '
         local tbl = {}
         for i = 1, n do tbl[i] = another:recv (20) end
+        another:close ()
         return tbl
     end)
 
@@ -272,10 +256,6 @@ function T:test_zmq_recv_pub_sub ()
     continue = false -- stop the server
 
     unittest.assert.istrue 'Cannot join the publisher pthread.' (pthread.join (thread_s))
-
-    server:close ()
-    client:close ()
-    another:close ()
 end
 
 

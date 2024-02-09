@@ -327,7 +327,8 @@ int l_zmq_setsockopt_string(lua_State *L)
         raise_zmq_errno(L);
     }
 
-    return 0;
+    lua_pushvalue(L, 1);
+    return 1;
 }
 
 const struct luaL_Reg libluazmq[] = {
