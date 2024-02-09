@@ -242,7 +242,7 @@ function T:test_PUB_SUB_pthreaded ()
     end)
 
     local thread_c = pthread.create (function ()
-        local client  = zmq.socket (self.ctx, zmq.SUB):connect { port = port }:subscribe '10001 '
+        local client  = zmq.socket (self.ctx, zmq.SUB):subscribe '10001 ':connect { port = port }
         local tbl = {}
         for i = 1, n do tbl[i] = client:recv_msg_more () end
         client:close ()
@@ -250,7 +250,7 @@ function T:test_PUB_SUB_pthreaded ()
     end)
 
     local thread_a = pthread.create (function ()
-        local another  = zmq.socket (self.ctx, zmq.SUB):connect { port = port }:subscribe '10002 '
+        local another  = zmq.socket (self.ctx, zmq.SUB):subscribe '10002 ':connect { port = port }
         local tbl = {}
         for i = 1, n do tbl[i] = another:recv (20) end
         another:close ()
@@ -302,9 +302,9 @@ function T:test_zmq_ventilator ()
 
             while continue do
                 local msg = receiver:recv (10)
-                print ('worker: ' .. i .. ' received: ' .. msg)
-                os.execute ('sleep 0.' .. msg .. 's')
-                sender:send ''
+                print ('Worker ' .. i .. ' received ' .. msg .. ' from the ventilator.')
+                os.execute ('sleep ' .. msg .. 's')
+                sender:send (tostring (i))
             end
             
             receiver:close ()
@@ -321,9 +321,13 @@ function T:test_zmq_ventilator ()
         local sink = sink_receiver_socket
         assert (sink:recv (10) == '0')
         local total_msec = os.time ()
-        for task = 1, ntasks do sink:recv (10) end
-        continue = false
-        return os.time () - total_msec
+        local done = {}
+        for task = 1, ntasks do 
+            local i = sink:recv (10) 
+            done[i] = (done[i] or 0) + 1
+            -- print ('Received ' .. i .. ' from worker ' .. done[i] .. ' times.')
+        end
+        return os.time () - total_msec, done
     end)
     
     local pth_server = pthread.create (function ()
@@ -337,14 +341,22 @@ function T:test_zmq_ventilator ()
         for task = 1, ntasks do
             local msec = math.random (100)
             total_msec = total_msec + msec
-            sender:send (tostring (msec))
+            sender:send (tostring (msec / 1000))
         end
 
-        return total_msec
+        return total_msec / 1000
     end)
 
-    print ('sink: ', pthread.join (pth_sink))
-    print ('server: ', pthread.join (pth_server))
+    local flag, elapsed, done = pthread.join (pth_sink)
+    local flag, total_sec =  pthread.join (pth_server)
+
+    for i = 1, nworkers do unittest.assert.istrue '' (done [tostring(i)] > 0) end
+    
+    print (elapsed, total_sec)
+    
+    continue = false
+
+    -- for i = 1, nworkers do pthread.join (workers[i]) end
 
     for i = 1, nworkers do w_sockets[i].ventilator:close (); w_sockets[i].sink:close () end
 
