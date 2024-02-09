@@ -45,8 +45,12 @@ function T:test_zmq_bind ()
 end
 
 
-function T:_test_zmq_bind_recv_DONTWAIT ()
-    zmq.socket (self.ctx, zmq.REP):bind { port = 5555 }:recv (10, zmq.DONTWAIT):close ()
+function T:test_zmq_bind_recv_DONTWAIT ()
+    local socket =  zmq.socket (self.ctx, zmq.REP):bind { port = 5555 }
+    unittest.assert.equals '' (false, '/usr/local/share/lua/5.4/zmq.lua:51: Resource temporarily unavailable') (
+        pcall (function () socket:recv (10, zmq.DONTWAIT) end)
+    )
+    socket:close ()
 end
 
 function T:test_zmq_recv ()
