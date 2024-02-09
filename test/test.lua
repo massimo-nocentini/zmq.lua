@@ -212,7 +212,24 @@ function T:test_REP_REQ_loop_pthreaded ()
 
 end
 
-function T:test_zmq_recv_pub_sub ()
+
+function T:test_PUB_all_messages_lost ()
+    
+    local server  = zmq.socket (self.ctx, zmq.PUB):bind { port = 5555 }
+    for i = 1, 10 do
+        local zipcode, temperature, relhumidity;
+        zipcode     = math.random (100000);
+        temperature = math.random (215) - 80;
+        relhumidity = math.random (50) + 10;
+        local msg = string.format ("%05d %d %d", zipcode, temperature, relhumidity)
+        server:send (msg)
+    end
+    server:close ()
+
+end
+
+
+function T:test_PUB_SUB_pthreaded ()
     
     local port, n = 5555, 10
 
@@ -234,7 +251,7 @@ function T:test_zmq_recv_pub_sub ()
     local thread_c = pthread.create (function ()
         local client  = zmq.socket (self.ctx, zmq.SUB):connect { port = port }:subscribe '10001 '
         local tbl = {}
-        for i = 1, n do tbl[i] = client:recv (20) end
+        for i = 1, n do tbl[i] = client:recv_msg_more () end
         client:close ()
         return tbl
     end)
@@ -259,7 +276,7 @@ function T:test_zmq_recv_pub_sub ()
 end
 
 
-function T:ftest_zmq_ventilator ()
+function T:test_zmq_ventilator ()
     
     local port_server, port_sink, nworkers, ntasks = 5557, 5558, 10, 100
 
